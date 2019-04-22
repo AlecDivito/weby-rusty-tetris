@@ -251,20 +251,20 @@ impl Tetris {
     }
 
     pub fn update(&mut self) {
-        if self.piece.position.y - self.piece.get_bounding_box_size() != 0 {
+        if self.can_piece_advance() {
             self.piece.advance();
         } else {
             // 1. move piece into cells
             let height = self.height / 2;
-            for r in 0..self.piece.get_bounding_box_size() {
-                for c in 0..self.piece.get_bounding_box_size() {
-                    let cell = self.piece.cells[self.piece.get_index(r, c)];
+            for row in 0..self.piece.get_bounding_box_size() {
+                for col in 0..self.piece.get_bounding_box_size() {
+                    let cell = self.piece.cells[self.piece.get_index(row, col)];
                     if cell == Cell::EMPTY {
                         continue;
                     }
-                    let y = (height - self.piece.position.y) + c;
-                    let x = r + self.piece.position.x;
-                    let index = self.get_index(y, x);
+                    let world_coord = Point { x: self.piece.position.x + col, y: (height - self.piece.position.y) + row };
+
+                    let index = self.get_index(world_coord.y, world_coord.x);
                     self.cells[index] = cell;
                 }
             }
@@ -287,6 +287,27 @@ impl Tetris {
 
     pub fn get_cells(&self) -> * const Cell {
         self.cells.as_ptr()
+    }
+
+    pub fn can_piece_advance(&self) -> bool {
+        let mut can_advance = true;
+
+        if self.piece.position.y - self.piece.get_bounding_box_size() > 0 {
+            return can_advance;
+        }
+
+        let row = self.piece.position.y - 1;
+        log!("{} = {} * 2 - {}", row, self.piece.get_bounding_box_size(), self.piece.position.y);
+        for col in 0..self.piece.get_bounding_box_size() {
+            let index = self.piece.get_index(row, col);
+            log!("({}, {}) = {}", row, col, index);
+            if self.piece.cells[index] != Cell::EMPTY {
+                can_advance = false;
+                break;
+            }
+        }
+
+        can_advance
     }
 
     /**
@@ -338,7 +359,6 @@ impl Tetris {
             // cells in the left most column
             for row in 0..self.piece.get_bounding_box_size() {
                 let index = self.piece.get_index(row, (self.piece.get_bounding_box_size() * 2 + self.piece.position.x) - self.width - 1 );
-                log!("{:?} {} {}", self.piece.cells[index], index, self.piece.position.x);
                 if self.piece.cells[index] != Cell::EMPTY {
                     return;
                 }
