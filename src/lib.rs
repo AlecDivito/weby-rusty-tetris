@@ -289,27 +289,6 @@ impl Tetris {
         self.cells.as_ptr()
     }
 
-    pub fn can_piece_advance(&self) -> bool {
-        let mut can_advance = true;
-
-        if self.piece.position.y - self.piece.get_bounding_box_size() > 0 {
-            return can_advance;
-        }
-
-        let row = self.piece.position.y - 1;
-        log!("{} = {} * 2 - {}", row, self.piece.get_bounding_box_size(), self.piece.position.y);
-        for col in 0..self.piece.get_bounding_box_size() {
-            let index = self.piece.get_index(row, col);
-            log!("({}, {}) = {}", row, col, index);
-            if self.piece.cells[index] != Cell::EMPTY {
-                can_advance = false;
-                break;
-            }
-        }
-
-        can_advance
-    }
-
     /**
      * All of this stuff is used to talk to the piece
      */
@@ -334,35 +313,13 @@ impl Tetris {
     }
 
     pub fn move_left(&mut self) {
-        if self.piece.position.x > 0 {
-            self.piece.move_left();
-        } else {
-            // not just a simple move
-            // check if the bounding box has any non-empty
-            // cells in the left most column
-            for row in 0..self.piece.get_bounding_box_size() {
-                let index = self.piece.get_index(row, self.piece.position.x * -1);
-                if self.piece.cells[index] != Cell::EMPTY {
-                    return;
-                }
-            }
+        if self.can_piece_go_left() {
             self.piece.move_left();
         }
     }
 
     pub fn move_right(&mut self) {
-        if self.piece.position.x < self.width - self.piece.get_bounding_box_size() {
-            self.piece.move_right();
-        } else {
-            // not just a simple move
-            // check if the bounding box has any non-empty
-            // cells in the left most column
-            for row in 0..self.piece.get_bounding_box_size() {
-                let index = self.piece.get_index(row, (self.piece.get_bounding_box_size() * 2 + self.piece.position.x) - self.width - 1 );
-                if self.piece.cells[index] != Cell::EMPTY {
-                    return;
-                }
-            }
+        if self.can_piece_go_right() {
             self.piece.move_right();
         }
     }
@@ -376,5 +333,109 @@ impl Tetris {
 
     fn get_index(&self, row: i32, col: i32) -> usize {
         (self.width * row + col) as usize
+    }
+
+    fn can_piece_advance(&self) -> bool {
+        // 1. find the lowest point on the shape
+        // TODO: improve this by going backwards and stopping
+        // after we find the first one
+        let height = self.height / 2;
+        for row in 0..self.piece.get_bounding_box_size() {
+            for col in 0..self.piece.get_bounding_box_size() {
+                let index = self.piece.get_index(row, col);
+                if self.piece.cells[index] != Cell::EMPTY {
+
+                    // 2. convert the local lowest row into world coordinates
+                    let world_coord = Point { x: self.piece.position.x + col, y: height - self.piece.position.y + row };
+                    if world_coord.y < 0 {
+                        continue;
+                    }
+
+                    // 3. now that the row is in world coordinates, check if there is a piece
+                    //    under this one in the game cells
+                    let world_index = self.get_index(world_coord.y + 1, world_coord.x);
+                    if self.cells[world_index] != Cell::EMPTY {
+                        return false;
+                    }
+
+                    // 4. check if piece will pass the border if it goes down 1 more
+                    let local_index = self.piece.get_index(row, col);
+                    if self.piece.cells[local_index] != Cell::EMPTY && world_coord.y + 1 >= height {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    fn can_piece_go_right(&self) -> bool {
+        // 1. find the rightest point on the shape
+        // TODO: improve this by going backwards and stopping
+        // after we find the first one
+        let height = self.height / 2;
+        for row in 0..self.piece.get_bounding_box_size() {
+            for col in 0..self.piece.get_bounding_box_size() {
+                let index = self.piece.get_index(row, col);
+                if self.piece.cells[index] != Cell::EMPTY {
+
+                    // 2. convert the local lowest row into world coordinates
+                    let world_coord = Point { x: self.piece.position.x + col, y: height - self.piece.position.y + row };
+                    if world_coord.y < 0 {
+                        continue;
+                    }
+
+                    // 3. now that the row is in world coordinates, check if there is a piece
+                    //    to the right of the game cell
+                    let world_index = self.get_index(world_coord.y, world_coord.x + 1);
+                    log!("({}, {})", world_coord.x, world_coord.y);
+                    if self.cells[world_index] != Cell::EMPTY {
+                        return false;
+                    }
+
+                    // 4. check if piece will pass the border if it goes down 1 more
+                    let local_index = self.piece.get_index(row, col);
+                    if self.piece.cells[local_index] != Cell::EMPTY && world_coord.x + 1 >= self.width {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    fn can_piece_go_left(&self) -> bool {
+        // 1. find the rightest point on the shape
+        // TODO: improve this by going backwards and stopping
+        // after we find the first one
+        let height = self.height / 2;
+        for row in 0..self.piece.get_bounding_box_size() {
+            for col in 0..self.piece.get_bounding_box_size() {
+                let index = self.piece.get_index(row, col);
+                if self.piece.cells[index] != Cell::EMPTY {
+
+                    // 2. convert the local lowest row into world coordinates
+                    let world_coord = Point { x: self.piece.position.x + col, y: height - self.piece.position.y + row };
+                    if world_coord.y < 0 {
+                        continue;
+                    }
+
+                    // 3. now that the row is in world coordinates, check if there is a piece
+                    //    to the right of the game cell
+                    let world_index = self.get_index(world_coord.y, world_coord.x - 1);
+                    log!("({}, {})", world_coord.x, world_coord.y);
+                    if self.cells[world_index] != Cell::EMPTY {
+                        return false;
+                    }
+
+                    // 4. check if piece will pass the border if it goes down 1 more
+                    if world_coord.x - 1 < 0 {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 }
