@@ -325,7 +325,66 @@ impl Tetris {
     }
 
     pub fn rotate(&mut self) {
-        self.piece.rotate();
+        let box_size = self.piece.get_bounding_box_size();
+        if box_size == 2 {
+            return;
+        }
+
+        if box_size == 4 {
+            return;
+        }
+
+        // all other blocks
+        let mut moves: Vec<(usize, usize)> = Vec::with_capacity(4);
+        let pivot = Point { x: self.piece.position.x + 1, y: self.piece.position.y - 1 };
+        for row in 0..box_size {
+            for col in 0..box_size {
+
+                let index = self.piece.get_index(row, col);
+                if self.piece.cells[index] == Cell::EMPTY {
+                    continue;
+                }
+                let world_point = Point { x: self.piece.position.x + row, y: self.piece.position.y - col };
+                let vector_r_x = world_point.x - pivot.x;
+                let vector_r_y = world_point.y - pivot.y;
+
+                let transformed_vector_x = 0 * vector_r_x + -1 * vector_r_y;
+                let transformed_vector_y = 1 * vector_r_x +  0 * vector_r_y;
+
+                let new_world_x = pivot.x + transformed_vector_x;
+                let new_world_y = pivot.y + transformed_vector_y;
+
+                // 1. check if move is valid. If move is not valid, don't rotate
+                // 1.1 check if piece is inside right wall
+                if world_point.x > self.width - 1 {
+                    return;
+                }
+                // 1.2 check if piece is inside left wall
+                if world_point.x < 0 {
+                    return;
+                }
+
+                let new_local_x = new_world_x - self.piece.position.x;
+                let new_local_y = self.piece.position.y - new_world_y;
+                let new_index = (box_size * new_local_x + new_local_y) as usize;
+
+                // 1.3 check if piece is inside piece
+                let new_world_index = self.get_index(20 - new_world_y, new_world_x + 1);
+                if self.cells[new_world_index] != Cell::EMPTY {
+                log!("{} {} {}", 20 -new_world_y, new_world_x + 1, self.get_index(20 - new_world_y, new_world_x + 1));
+                    return;
+                }
+
+                moves.push((index, new_index));
+            }
+        }
+        // move pieces
+        for i in &moves {
+            self.piece.cells[i.0] = Cell::EMPTY;
+        }
+        for i in &moves {
+            self.piece.cells[i.1] = self.piece.cell;
+        }
     }
 }
 
@@ -389,7 +448,6 @@ impl Tetris {
                     // 3. now that the row is in world coordinates, check if there is a piece
                     //    to the right of the game cell
                     let world_index = self.get_index(world_coord.y, world_coord.x + 1);
-                    log!("({}, {})", world_coord.x, world_coord.y);
                     if self.cells[world_index] != Cell::EMPTY {
                         return false;
                     }
@@ -424,7 +482,6 @@ impl Tetris {
                     // 3. now that the row is in world coordinates, check if there is a piece
                     //    to the right of the game cell
                     let world_index = self.get_index(world_coord.y, world_coord.x - 1);
-                    log!("({}, {})", world_coord.x, world_coord.y);
                     if self.cells[world_index] != Cell::EMPTY {
                         return false;
                     }
