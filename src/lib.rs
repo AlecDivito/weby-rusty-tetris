@@ -26,6 +26,12 @@ pub struct Point {
     pub y: i32,
 }
 
+impl Point {
+    pub fn new(x: i32, y: i32) -> Point {
+        Point { x, y }
+    }
+}
+
 #[wasm_bindgen]
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -291,7 +297,17 @@ impl Tetris {
             self.piece.advance();
         } else {
             self.merge_piece_into_board();
+            if self.is_topped_out() {
+                // TODO: game lost logic
+            } else {
+                self.update_board();
+            }
         }
+
+        // TODO WHEN DONE (OR BASICITY DONE):
+        // CHECK OUT https://shop.tetris.com/
+        // THIS COULD BE AN IDEA  TO HELP MONETIZE A WEBSITE
+
         // TODO: when landing, use a half second lock delay
         //       https://tetris.fandom.com/wiki/Lock_delay
 
@@ -317,8 +333,7 @@ impl Tetris {
         // TODO: when starting game or resuming a game, trigger a count down timer from 3
 
         // TODO: implement game features
-        //       Leveling up can be by using a fixed goal (10 lines)
-        //       Or using a variable goal (5 times the level number)
+        //       Using a variable goal (5 times the level number)
         //       if using variable goal: (use https://tetris.fandom.com/wiki/Scoring#Guideline_scoring_system)
         //          Single line: 1 line
         //          Double line: 3 line
@@ -365,6 +380,14 @@ impl Tetris {
     /// Return the height of the game board
     pub fn get_height(&self) -> i32 {
         self.height
+    }
+
+    /// Return the next level's goal
+    /// 
+    /// The next levels goal is always the current level * 5
+    pub fn get_next_level_goal(&self) -> u32 {
+        // TODO: remove magic number
+        self.level * 5
     }
 
     /// Return the current level of the game board
@@ -424,8 +447,8 @@ impl Tetris {
 
         let box_size = self.piece.get_bounding_box_size();
         let pivot = self.piece.get_origin();
-        log!("{} {}, {} {}", self.piece.position.x, self.piece.position.y, pivot.x, pivot.y);
-        let mut moves: Vec<(usize, usize)> = Vec::with_capacity(4);
+        let mut wall_kick_translation = Point::new(0, 0);
+        let mut moves: Vec<(i32, i32)> = Vec::with_capacity(4);
         for row in 0..box_size {
             for col in 0..box_size {
 
@@ -454,41 +477,40 @@ impl Tetris {
                     }
                 }
 
-                // 1. check if move is valid. If move is not valid, don't rotate
-                // 1.1 check if piece is inside right wall
-                // TODO: Add kick back
-                if new_world_x > self.width - 1 {
-                    return;
-                }
-                // 1.2 check if piece is inside left wall
-                // TODO: Add kick back
-                if new_world_x < 0 {
-                    return;
-                }
-
                 let new_local_x = new_world_x - self.piece.position.x;
                 let new_local_y = new_world_y - self.piece.position.y;
 
 
-                let new_index = self.piece.get_index(new_local_y, new_local_x);
+                // 1. check if move is valid. If move is not valid, don't rotate
+                // 1.1 check if piece is inside right wall
+                let wall_kick_distance = new_world_x - self.width - 1;
+                if new_world_x > self.width - 1 && wall_kick_distance < wall_kick_translation.x {
+                    wall_kick_translation.x = wall_kick_distance;
+                }
+                // 1.2 check if piece is inside left wall
+                if new_world_x < 0 && new_world_x < wall_kick_translation.x {
+                    wall_kick_translation.x = new_world_x * -1;
+                }
 
                 // 1.3 check if piece is inside piece
-                // TODO: Add kick back
                 let new_world_index = self.get_index(new_world_y, new_world_x);
                 if self.cells[new_world_index] != Cell::EMPTY {
+                    // TODO: complicated wall kick
                     return;
                 }
 
-                moves.push((local_index, new_index));
+                moves.push((new_local_x, new_local_y));
             }
         }
         // move pieces
-        for i in &moves {
-            self.piece.cells[i.0] = Cell::EMPTY;
+        for i in 0..self.piece.cells.len() {
+            self.piece.cells[i] = Cell::EMPTY;
         }
         for i in &moves {
-            self.piece.cells[i.1] = self.piece.cell;
+            let new_index = self.piece.get_index(i.1, i.0);
+            self.piece.cells[new_index] = self.piece.cell;
         }
+        self.piece.position.x = self.piece.position.x + wall_kick_translation.x;
         self.piece.rotation.clockwise();
     }
 }
@@ -624,5 +646,90 @@ impl Tetris {
             }
         }
         return true;
+    }
+
+    fn update_board(&mut self) {
+        // 1. find all removable rows
+        let mut removable_rows = Vec::new();
+        for row in (0..self.height).rev() {
+            // TODO: improve by stopping loop when row only contains empty cells
+            //       also have is_row_full return a enum
+            if self.is_row_full(row) {
+                removable_rows.push(row);
+            }
+        }
+
+        // 2. if no rows are removable, return
+        if removable_rows.len() == 0 {
+            return;
+        }
+
+        // 2. calculate points
+        // TODO: double check point system
+        // https://tetris.fandom.com/wiki/Scoring#Guideline_scoring_system
+        //          Single line: 1 line
+        //          Double line: 3 line
+        //          Triple line: 5 line
+        //          Tetris line: 8 line
+        let rows_completed_score = match removable_rows.len() {
+            0 => 0,
+            1 => 1,
+            2 => 3,
+            3 => 5,
+            4 => 8,
+            _ => 8,
+        };
+        // update level if rows_completed passed a threshold
+        self.rows_completed = self.rows_completed + rows_completed_score;
+        if self.rows_completed > self.get_next_level_goal() {
+            self.level = self.level + 1;
+        }
+
+        // 3. remove all rows and push higher pieces down
+        for row in &removable_rows {
+            for col in 0..self.width {
+                let index = self.get_index(*row, col);
+                self.cells[index] = Cell::EMPTY;
+            }
+        }
+
+        // 4. pull all piece above row down one
+        for _ in &removable_rows {
+            for row in (0..self.height - 1).rev() {
+                // move bricks down one
+                if !self.is_row_empty(row + 1) {
+                    continue;
+                }
+                for col in 0..self.width {
+                    let old_index = self.get_index(row, col);
+                    let new_index = self.get_index(row + 1, col);
+                    self.cells[new_index] = self.cells[old_index];
+                }
+            }
+        }
+    }
+
+    fn is_row_full(&self, row: i32) -> bool {
+        for col in 0..self.width {
+            let index = self.get_index(row, col);
+            if self.cells[index] == Cell::EMPTY {
+                return false;
+            }
+        }
+        return true
+    }
+
+    fn is_row_empty(&self, row: i32) -> bool {
+        for col in 0..self.width {
+            let index = self.get_index(row, col);
+            if self.cells[index] != Cell::EMPTY {
+                return false;
+            }
+        }
+        return true
+    }
+
+    fn is_topped_out(&self) -> bool {
+        
     }
 }
