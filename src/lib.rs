@@ -3,8 +3,10 @@ mod utils;
 extern crate web_sys;
 extern crate js_sys;
 
+use std::collections::VecDeque;
 use web_sys::console;
-use wasm_bindgen::prelude::*;
+use wasm_bindgen::prelude::wasm_bindgen;
+use crate::utils::set_panic_hook;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -17,6 +19,23 @@ macro_rules! log {
     ( $( $t:tt )* ) => {
         web_sys::console::log_1(&format!( $( $t )* ).into());
     }
+}
+
+pub fn shuffle<T>(array: &mut Vec<T>) {
+    for i in (0..array.len()).rev() {
+        let mut j = (js_sys::Math::random() * ((i as f64) + 1.0)).round() as usize;
+        if j >= array.len() {
+            j = array.len() - 1;
+        }
+        array.swap(i, j);
+    }
+}
+
+pub fn pop_front<T>(array: &mut Vec<T>) -> Option<T> {
+    array.reverse();
+    let value = array.pop();
+    array.reverse();
+    value
 }
 
 #[wasm_bindgen]
@@ -63,6 +82,11 @@ impl Cell {
         }
     }
 
+    pub fn random_piece_queue() -> Vec<Cell> {
+        let mut cell_array = vec![Cell::I, Cell::O, Cell::T, Cell::S, Cell::Z, Cell::J, Cell::L];
+        shuffle(&mut cell_array);
+        cell_array
+    }
     pub fn get_cells(&self) -> Vec<Cell> {
         match self {
             Cell::O => vec![Cell::O, Cell::O,
@@ -130,8 +154,25 @@ struct Piece {
 }
 
 impl Piece {
-    pub fn new() -> Piece {
+    pub fn random() -> Piece {
         let cell = Cell::random();
+        let cells = cell.get_cells();
+        let rotation = Rotation::NORTH;
+        let position = match cell {
+            Cell::O => Point { x: 4, y: 3 },
+            Cell::I => Point { x: 3, y: 3 },
+            _ =>       Point { x: 3, y: 3 }
+        };
+
+        Piece {
+            cells,
+            rotation,
+            cell,
+            position,
+        }
+    }
+
+    pub fn new(cell: Cell) -> Piece {
         let cells = cell.get_cells();
         let rotation = Rotation::NORTH;
         let position = match cell {
@@ -259,15 +300,20 @@ impl Piece {
 pub struct Tetris {
     rows_completed: u32,
     level: u32,
+    score: u32,
     width: i32,
     height: i32,
     cells: Vec<Cell>,
+    piece_queue: Vec<Cell>,
     piece: Piece,
+    hold_piece: Piece,
 }
 
 #[wasm_bindgen]
 impl Tetris {
     pub fn new() -> Tetris {
+        set_panic_hook();
+        let score = 0;
         let rows_completed = 0;
         let level = 1;
         let width = 10;
@@ -276,43 +322,66 @@ impl Tetris {
         let cells = (0..width * height)
             .map(|_i| Cell::EMPTY).collect();
 
-        let piece = Piece::new();
+        let mut piece_queue = Cell::random_piece_queue();
+        piece_queue.append(&mut Cell::random_piece_queue());
+
+        let mut piece = match pop_front(&mut piece_queue) {
+            Some(x) => Piece::new(x),
+            None => Piece::random()
+        };
+        piece.advance();
+        let hold_piece = Piece::new(Cell::EMPTY);
 
         Tetris {
             rows_completed,
             level,
+            score,
             width,
             height,
             cells,
             piece,
+            piece_queue,
+            hold_piece,
         }
     }
 
     /// Update the tetris board
-    pub fn update(&mut self) {
+    pub fn update(&mut self) -> bool {
         // TODO: use controller controls
         //       https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API
         // TODO: add mouse tracking
         if self.can_piece_advance() {
             self.piece.advance();
+            return false;
         } else {
             self.merge_piece_into_board();
+            self.piece = match pop_front(&mut self.piece_queue) {
+                Some(x) => Piece::new(x),
+                None => Piece::random()
+            };
+            if self.piece_queue.len() <= 7 { // TODO: remove magic number
+                self.piece_queue.append(&mut Cell::random_piece_queue());
+            }
             if self.is_topped_out() {
                 // TODO: game lost logic
+                log!("game lost");
             } else {
                 self.update_board();
+                self.piece.advance();
             }
+            return true;
         }
 
         // TODO WHEN DONE (OR BASICITY DONE):
         // CHECK OUT https://shop.tetris.com/
         // THIS COULD BE AN IDEA  TO HELP MONETIZE A WEBSITE
 
+        // TODO: Added random shuffle fucked up dependencys
+        //       instread of using shuffle, make your own 
+        //       with the javascirpt random function
+
         // TODO: when landing, use a half second lock delay
         //       https://tetris.fandom.com/wiki/Lock_delay
-
-        // TODO: if piece was just merged and new piece was generated
-        //       Immediately drop one space if no existing Block is in its path
 
         // TODO: implement Hold piece
         //       when putting a piece into the hold box, if there is a piece, swap the two pieces
@@ -334,17 +403,11 @@ impl Tetris {
 
         // TODO: implement game features
         //       Using a variable goal (5 times the level number)
-        //       if using variable goal: (use https://tetris.fandom.com/wiki/Scoring#Guideline_scoring_system)
-        //          Single line: 1 line
-        //          Double line: 3 line
-        //          Triple line: 5 line
-        //          Tetris line: 8 line
         // Get extra points by doing T-spins: https://tetris.fandom.com/wiki/T-Spin
         //      T-spin algorithm seems really hard so you don't need to really do this
         // Marathon mode must have 15 levels
         // 2 or 3 minute timed mode (called ultra)
         // scoring system: https://tetris.fandom.com/wiki/Scoring#Guideline_scoring_system
-        // Lose game when a piece top outs: https://tetris.fandom.com/wiki/Top_out
 
         // TODO: show 1 to 6 "next" pieces
         //       set the default to 6
@@ -357,19 +420,10 @@ impl Tetris {
             // Tetris Game Design by Alexey Pajitnov.
             // Tetris Logo Design by Roger Dean.
             // All Rights Reserved.
+    }
 
-        // TODO:
-        //  - Up arrow and X are to rotate 90° clockwise.
-        //  - Space to hard drop.
-        //  - Shift and C are to hold.
-        //  - Ctrl and Z are to rotate 90° counterclockwise.
-        //  - Esc and F1 are to pause.
-        //  - Left, right, and down arrows are the same as on the console.
-        //  - Number pad controls:
-        //      - 0 is to hold.
-        //      - 8, 4, 6, and 2 are hard drop, left shift, right shift, and soft drop respectively.
-        //      - 1, 5, and 9 are to rotate 90° clockwise.
-        //      - 3 and 7 are to rotate 90° counterclockwise.
+    pub fn get_score(&self) -> u32 {
+        self.score
     }
 
     /// Return the width of the game board
@@ -380,6 +434,12 @@ impl Tetris {
     /// Return the height of the game board
     pub fn get_height(&self) -> i32 {
         self.height
+    }
+
+    /// Return the offset height to make the game field
+    /// 10 x 20
+    pub fn get_offset_height(&self) -> i32 {
+        self.height - 20
     }
 
     /// Return the next level's goal
@@ -398,6 +458,10 @@ impl Tetris {
     /// Return the number of rows that have been completed
     pub fn get_rows_completed(&self) -> u32 {
         self.rows_completed
+    }
+
+    pub fn get_queued_pieces(&self) -> * const Cell {
+        self.piece_queue.as_ptr()
     }
 
     /// Return a pointer to the first element in the boards vector
@@ -439,8 +503,20 @@ impl Tetris {
         }
     }
 
+    pub fn hard_drop(&mut self) {
+        log!("unimplemented");
+    }
+
+    pub fn hold_piece(&mut self) {
+        log!("unimplemented");
+    }
+
+    pub fn rotate_counter_clockwise(&mut self) {
+        log!("unimplemented")
+    }
+
     /// Try to rotate the active piece
-    pub fn rotate(&mut self) {
+    pub fn rotate_clockwise(&mut self) {
         if self.piece.cell == Cell::O {
             return;
         }
@@ -525,7 +601,6 @@ impl Tetris {
 
     /// Merge piece into board of cells
     fn merge_piece_into_board(&mut self) {
-        // 1. move piece into cells
         for row in 0..self.piece.get_bounding_box_size() {
             for col in 0..self.piece.get_bounding_box_size() {
                 let cell = self.piece.cells[self.piece.get_index(row, col)];
@@ -541,8 +616,6 @@ impl Tetris {
                 self.cells[index] = cell;
             }
         }
-        // 2. create a new piece
-        self.piece = Piece::new();
     }
 
     /// Check if piece can advance on the board
@@ -703,7 +776,7 @@ impl Tetris {
                 for col in 0..self.width {
                     let old_index = self.get_index(row, col);
                     let new_index = self.get_index(row + 1, col);
-                    self.cells[new_index] = self.cells[old_index];
+                    self.cells.swap(old_index, new_index);
                 }
             }
         }
@@ -729,7 +802,14 @@ impl Tetris {
         return true
     }
 
+    // TODO: add some more "fun" logic https://tetris.fandom.com/wiki/Top_out
     fn is_topped_out(&self) -> bool {
-        
+        for col in 0..self.width {
+            let index = self.get_index(4, col);
+            if self.cells[index] != Cell::EMPTY {
+                return true;
+            }
+        }
+        false
     }
 }
