@@ -306,7 +306,8 @@ pub struct Tetris {
     cells: Vec<Cell>,
     piece_queue: Vec<Cell>,
     piece: Piece,
-    hold_piece: Piece,
+    can_swap_piece: bool,
+    hold_piece: Cell,
 }
 
 #[wasm_bindgen]
@@ -330,7 +331,8 @@ impl Tetris {
             None => Piece::random()
         };
         piece.advance();
-        let hold_piece = Piece::new(Cell::EMPTY);
+        let hold_piece = Cell::EMPTY;
+        let can_swap_piece = true;
 
         Tetris {
             rows_completed,
@@ -341,6 +343,7 @@ impl Tetris {
             cells,
             piece,
             piece_queue,
+            can_swap_piece,
             hold_piece,
         }
     }
@@ -355,13 +358,8 @@ impl Tetris {
             return false;
         } else {
             self.merge_piece_into_board();
-            self.piece = match pop_front(&mut self.piece_queue) {
-                Some(x) => Piece::new(x),
-                None => Piece::random()
-            };
-            if self.piece_queue.len() <= 7 { // TODO: remove magic number
-                self.piece_queue.append(&mut Cell::random_piece_queue());
-            }
+            self.get_next_piece();
+            self.can_swap_piece = true;
             if self.is_topped_out() {
                 // TODO: game lost logic
                 log!("game lost");
@@ -382,12 +380,6 @@ impl Tetris {
 
         // TODO: when landing, use a half second lock delay
         //       https://tetris.fandom.com/wiki/Lock_delay
-
-        // TODO: implement Hold piece
-        //       when putting a piece into the hold box, if there is a piece, swap the two pieces
-        //       otherwise just put the hold piece in the box
-        //       you can only swap piece once
-        //       enabled by default
 
         // TODO: Sound effect on by default
         //       effect for rotation, movement, landing on surface, touching a wall,
@@ -460,6 +452,10 @@ impl Tetris {
         self.rows_completed
     }
 
+    pub fn get_hold_piece(&self) -> Cell {
+        self.hold_piece
+    }
+
     pub fn get_queued_pieces(&self) -> * const Cell {
         self.piece_queue.as_ptr()
     }
@@ -508,7 +504,20 @@ impl Tetris {
     }
 
     pub fn hold_piece(&mut self) {
-        log!("unimplemented");
+        // TODO: enabled by default
+        if !self.can_swap_piece {
+            return;
+        }
+
+        if self.hold_piece == Cell::EMPTY {
+            self.hold_piece = self.piece.cell;
+            self.get_next_piece();
+        } else {
+            let new_piece = self.hold_piece;
+            self.hold_piece = self.piece.cell;
+            self.piece = Piece::new(new_piece);
+        }
+        self.can_swap_piece = false;
     }
 
     pub fn rotate_counter_clockwise(&mut self) {
@@ -588,6 +597,16 @@ impl Tetris {
         }
         self.piece.position.x = self.piece.position.x + wall_kick_translation.x;
         self.piece.rotation.clockwise();
+    }
+
+    fn get_next_piece(&mut self) {
+        self.piece = match pop_front(&mut self.piece_queue) {
+            Some(x) => Piece::new(x),
+            None => Piece::random()
+        };
+        if self.piece_queue.len() <= 7 { // TODO: remove magic number
+            self.piece_queue.append(&mut Cell::random_piece_queue());
+        }
     }
 }
 
