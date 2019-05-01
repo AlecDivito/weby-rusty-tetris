@@ -306,6 +306,7 @@ pub struct Tetris {
     cells: Vec<Cell>,
     piece_queue: Vec<Cell>,
     piece: Piece,
+    shadow_piece_position: Point,
     can_swap_piece: bool,
     hold_piece: Cell,
 }
@@ -331,6 +332,7 @@ impl Tetris {
             None => Piece::random()
         };
         piece.advance();
+        let shadow_piece_position = Point::new(0, 0);
         let hold_piece = Cell::EMPTY;
         let can_swap_piece = true;
 
@@ -343,6 +345,7 @@ impl Tetris {
             cells,
             piece,
             piece_queue,
+            shadow_piece_position,
             can_swap_piece,
             hold_piece,
         }
@@ -353,6 +356,7 @@ impl Tetris {
         // TODO: use controller controls
         //       https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API
         // TODO: add mouse tracking
+        self.update_shadow_piece_position();
         if self.can_piece_advance() {
             self.piece.advance();
             return false;
@@ -374,9 +378,8 @@ impl Tetris {
         // CHECK OUT https://shop.tetris.com/
         // THIS COULD BE AN IDEA  TO HELP MONETIZE A WEBSITE
 
-        // TODO: Added random shuffle fucked up dependencys
-        //       instread of using shuffle, make your own 
-        //       with the javascirpt random function
+        // TODO: every update pass in the pending actions
+        //       move time code into here
 
         // TODO: when landing, use a half second lock delay
         //       https://tetris.fandom.com/wiki/Lock_delay
@@ -388,13 +391,9 @@ impl Tetris {
         // TODO: Must have music (song must be Korobeiniki)
         //       music on by default
 
-        // TODO: Ghost Piece
-        //       enabled by default
-
         // TODO: when starting game or resuming a game, trigger a count down timer from 3
 
         // TODO: implement game features
-        //       Using a variable goal (5 times the level number)
         // Get extra points by doing T-spins: https://tetris.fandom.com/wiki/T-Spin
         //      T-spin algorithm seems really hard so you don't need to really do this
         // Marathon mode must have 15 levels
@@ -485,10 +484,15 @@ impl Tetris {
         self.piece.position.clone()
     }
 
+    pub fn get_shadow_piece_position(&self) -> Point {
+        self.shadow_piece_position.clone()
+    }
+
     /// Try to move the active piece left
     pub fn move_left(&mut self) {
         if self.can_piece_go_left() {
             self.piece.move_left();
+            self.update_shadow_piece_position();
         }
     }
 
@@ -496,6 +500,7 @@ impl Tetris {
     pub fn move_right(&mut self) {
         if self.can_piece_go_right() {
             self.piece.move_right();
+            self.update_shadow_piece_position();
         }
     }
 
@@ -799,6 +804,50 @@ impl Tetris {
                 }
             }
         }
+    }
+
+    fn update_shadow_piece_position(&mut self) {
+        // TODO: enabled by default
+        let mut world_y = self.height;
+        let world_x = self.piece.position.x;
+        let size = self.piece.get_bounding_box_size();
+        let mut offset = 0;
+        for col in (0..size).rev() {
+            if col + world_x >= self.width || col + world_x < 0 {
+                // bounding box is off page, no point in checking
+                log!("skipping: {}", col + world_x);
+                continue;
+            }
+            for row in (0..size).rev() {
+                let cell = self.piece.cells[self.piece.get_index(row, col)];
+                if cell == Cell::EMPTY {
+                    continue;
+                }
+                if offset < row {
+                    offset = row + 1;
+                }
+                if world_y > self.height - offset {
+                    world_y = self.height - offset
+                }
+
+                // find largest stack
+                let mut breakout = false;
+                let world_col = world_x + col;
+                for world_row in 0..self.height {
+                    let world_cell = self.cells[self.get_index(world_row, world_col)];
+                    if world_cell != Cell::EMPTY && world_y > world_row - (row + 1) {
+                        world_y = world_row - (row + 1);
+                        log!("col: {}, row: {}, offset: {}, point: ({}, {})", col, row, offset, world_x, world_y);
+                        breakout = true;
+                    }
+                    if breakout {
+                        break;
+                    }
+                }
+            }
+        }
+        self.shadow_piece_position = Point { x: world_x, y: world_y };
+        log!("point: ({} {})", self.shadow_piece_position.x, self.shadow_piece_position.y);
     }
 
     fn is_row_full(&self, row: i32) -> bool {
