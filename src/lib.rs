@@ -20,6 +20,12 @@ macro_rules! log {
     }
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+enum Direction {
+    Left,
+    Right,
+}
+
 struct Timer {
     last_time: f64,
 }
@@ -234,6 +240,26 @@ impl Rotation {
         }
     }
 
+    pub fn next_rotation(&self, direction: Direction) -> Rotation {
+        match direction {
+            Direction::Left => {
+                match self {
+                    Rotation::NORTH => Rotation::WEST,
+                    Rotation::EAST => Rotation::NORTH,
+                    Rotation::SOUTH => Rotation::EAST,
+                    Rotation::WEST => Rotation::SOUTH,
+                }
+            },
+            Direction::Right => {
+                match self {
+                    Rotation::NORTH => Rotation::EAST,
+                    Rotation::EAST => Rotation::SOUTH,
+                    Rotation::SOUTH => Rotation::WEST,
+                    Rotation::WEST => Rotation::NORTH,
+                }
+            },
+        }
+    }
 }
 
 struct Piece {
@@ -382,7 +408,7 @@ impl Piece {
                     x: self.position.x + 2,
                     y: self.position.y + 2
                 },
-                Rotation::EAST  => Point {
+                Rotation::WEST  => Point {
                     x: self.position.x + 1,
                     y: self.position.y + 1
                 },
@@ -390,10 +416,10 @@ impl Piece {
                     x: self.position.x + 2,
                     y: self.position.y + 2
                 },
-                Rotation::WEST  => Point {
+                Rotation::EAST  => Point {
                     x: self.position.x + 1,
                     y: self.position.y + 1
-                }
+                },
             },
             _ => Point {
                 x: self.position.x + 1,
@@ -415,6 +441,7 @@ impl Piece {
     }
 }
 
+// TODO: test scoring system: https://tetris.fandom.com/wiki/Scoring#Guideline_scoring_system
 #[wasm_bindgen]
 pub struct Tetris {
     game: Game,
@@ -491,8 +518,8 @@ impl Tetris {
             let stop_updating = match action {
                 0 => self.hard_drop(),
                 1 => self.hold_piece(),
-                2 => self.rotate_clockwise(),
-                3 => self.rotate_counter_clockwise(),
+                2 => self.rotate(Direction::Right), // self.rotate_clockwise(),
+                3 => self.rotate(Direction::Left),// self.rotate_counter_clockwise(),
                 4 => self.move_left(),
                 5 => self.move_right(),
                 6 => self.enable_soft_drop(),
@@ -519,12 +546,15 @@ impl Tetris {
 
         self.game.update(elapsed_time);
         self.piece.update(elapsed_time);
+        let mut result = false;
         if self.game.can_update_game(self.update_speed()) {
-            self.soft_drop = false;
             self.game.reset();
             if self.can_piece_advance() {
                 self.piece.advance();
-                return false;
+                if self.soft_drop {
+                    self.score += 1;
+                }
+                result = false;
             } else {
                 self.merge_piece_into_board();
                 self.get_next_piece();
@@ -536,10 +566,11 @@ impl Tetris {
                     self.update_board();
                     self.piece.advance();
                 }
-                return true;
+                result = true;
             }
+            self.soft_drop = false;
         }
-        false
+        result
 
 
         // TODO WHEN DONE (OR BASICITY DONE):
@@ -557,13 +588,6 @@ impl Tetris {
         //       music on by default
 
         // TODO: when starting game or resuming a game, trigger a count down timer from 3
-
-        // TODO: implement game features
-        // Get extra points by doing T-spins: https://tetris.fandom.com/wiki/T-Spin
-        //      T-spin algorithm seems really hard so you don't need to really do this
-        // Marathon mode must have 15 levels
-        // 2 or 3 minute timed mode (called ultra)
-        // scoring system: https://tetris.fandom.com/wiki/Scoring#Guideline_scoring_system
 
         // TODO: Game must have this notice when the game starts (XXXX is the year the game was created)
             // Tetris © 1985~XXXX Tetris Holding.
@@ -671,6 +695,7 @@ impl Tetris {
     pub fn hard_drop(&mut self) -> bool {
         if self.can_hard_drop {
             self.can_hard_drop = false;
+            self.score += ((self.height - self.piece.position.y) * 2) as u32;
             self.piece.position = self.shadow_piece_position;
             self.game.update_asap();
             return true;
@@ -695,93 +720,6 @@ impl Tetris {
         }
         self.can_swap_piece = false;
         true
-    }
-
-    pub fn rotate_counter_clockwise(&mut self) -> bool {
-        log!("unimplemented");
-        true
-    }
-
-    /// Try to rotate the active piece
-    pub fn rotate_clockwise(&mut self) -> bool {
-        if self.piece.record_timer > 100.0 {
-            self.piece.reset_timer = true;
-        } else {
-            return false;
-        }
-
-        if self.piece.cell == Cell::O {
-            return false;
-        }
-
-        let box_size = self.piece.get_bounding_box_size();
-        let pivot = self.piece.get_origin();
-        let mut wall_kick_translation = Point::new(0, 0);
-        let mut moves: Vec<(i32, i32)> = Vec::with_capacity(4);
-        for row in 0..box_size {
-            for col in 0..box_size {
-
-                let local_index = self.piece.get_index(row, col);
-                if self.piece.cells[local_index] == Cell::EMPTY {
-                    continue;
-                }
-                let world_point = Point {
-                    x: self.piece.position.x + col,
-                    y: self.piece.position.y + row
-                };
-                let rotated_vector_x = world_point.x - pivot.x;
-                let rotated_vector_y = world_point.y - pivot.y;
-
-                let transformed_vector_x = 0 * rotated_vector_x + -1 * rotated_vector_y;
-                let transformed_vector_y = 1 * rotated_vector_x +  0 * rotated_vector_y;
-
-                let mut new_world_x = pivot.x + transformed_vector_x;
-                let new_world_y = pivot.y + transformed_vector_y;
-
-                if self.piece.cell == Cell::I {
-                    if self.piece.rotation == Rotation::NORTH || self.piece.rotation == Rotation::SOUTH{
-                        new_world_x = new_world_x - 1;
-                    } else if self.piece.rotation == Rotation::EAST || self.piece.rotation == Rotation::WEST {
-                        new_world_x = new_world_x + 1;
-                    }
-                }
-
-                let new_local_x = new_world_x - self.piece.position.x;
-                let new_local_y = new_world_y - self.piece.position.y;
-
-
-                // 1. check if move is valid. If move is not valid, don't rotate
-                // 1.1 check if piece is inside right wall
-                let wall_kick_distance = new_world_x - self.width - 1;
-                if new_world_x > self.width - 1 && wall_kick_distance < wall_kick_translation.x {
-                    wall_kick_translation.x = wall_kick_distance;
-                }
-                // 1.2 check if piece is inside left wall
-                if new_world_x < 0 && new_world_x < wall_kick_translation.x {
-                    wall_kick_translation.x = new_world_x * -1;
-                }
-
-                // 1.3 check if piece is inside piece
-                let new_world_index = self.get_index(new_world_y, new_world_x);
-                if self.cells[new_world_index] != Cell::EMPTY {
-                    // TODO: complicated wall kick
-                    return false;
-                }
-
-                moves.push((new_local_x, new_local_y));
-            }
-        }
-        // move pieces
-        for i in 0..self.piece.cells.len() {
-            self.piece.cells[i] = Cell::EMPTY;
-        }
-        for i in &moves {
-            let new_index = self.piece.get_index(i.1, i.0);
-            self.piece.cells[new_index] = self.piece.cell;
-        }
-        self.piece.position.x = self.piece.position.x + wall_kick_translation.x;
-        self.piece.rotation.clockwise();
-        false
     }
 
     fn get_next_piece(&mut self) {
@@ -950,14 +888,15 @@ impl Tetris {
         //          Tetris line: 8 line
         let rows_completed_score = match removable_rows.len() {
             0 => 0,
-            1 => 1,
-            2 => 3,
-            3 => 5,
-            4 => 8,
-            _ => 8,
+            1 => 100,
+            2 => 300,
+            3 => 500,
+            4 => 800,
+            _ => 800,
         };
         // update level if rows_completed passed a threshold
-        self.rows_completed = self.rows_completed + rows_completed_score;
+        self.score = self.score + rows_completed_score;
+        self.rows_completed = self.rows_completed + (removable_rows.len() as u32);
         if self.rows_completed > self.get_next_level_goal() {
             self.level = self.level + 1;
         }
@@ -1041,6 +980,105 @@ impl Tetris {
             }
         }
         return true
+    }
+
+    fn rotate(&mut self, direction: Direction) -> bool {
+        if self.piece.record_timer > 250.0 {
+            self.piece.reset_timer = true;
+        } else {
+            return false;
+        }
+
+        if self.piece.cell == Cell::O {
+            return false;
+        }
+
+        let box_size = self.piece.get_bounding_box_size();
+        let pivot = self.piece.get_origin();
+        let mut wall_kick_translation = Point::new(0, 0);
+        let mut moves: Vec<(i32, i32)> = Vec::with_capacity(4);
+        for row in 0..box_size {
+            for col in 0..box_size {
+
+                let local_index = self.piece.get_index(row, col);
+                if self.piece.cells[local_index] == Cell::EMPTY {
+                    continue;
+                }
+                let world_point = Point {
+                    x: self.piece.position.x + col,
+                    y: self.piece.position.y + row
+                };
+                let rotated_vector_x = world_point.x - pivot.x;
+                let rotated_vector_y = world_point.y - pivot.y;
+
+                let rotation_matrix = match direction {
+                    Direction::Right => (1, -1),
+                    Direction::Left => (-1, 1),
+                };
+
+                let transformed_vector_x = 0 * rotated_vector_x + rotation_matrix.1 * rotated_vector_y;
+                let transformed_vector_y = rotation_matrix.0 * rotated_vector_x +  0 * rotated_vector_y;
+
+                let mut new_world_x = pivot.x + transformed_vector_x;
+                let mut new_world_y = pivot.y + transformed_vector_y;
+
+                if self.piece.cell == Cell::I {
+                    if direction == Direction::Right {
+                        if self.piece.rotation == Rotation::NORTH || self.piece.rotation == Rotation::SOUTH {
+                            new_world_x = new_world_x - 1;
+                        } else if self.piece.rotation == Rotation::EAST || self.piece.rotation == Rotation::WEST {
+                            new_world_x = new_world_x + 1;
+                        }
+                    } else if direction == Direction::Left {
+                        if self.piece.rotation == Rotation::NORTH || self.piece.rotation == Rotation::SOUTH {
+                            new_world_y = new_world_y - 1;
+                        } else if self.piece.rotation == Rotation::EAST || self.piece.rotation == Rotation::WEST {
+                            new_world_y = new_world_y + 1;
+                        }
+                    }
+                }
+
+                let new_local_x = new_world_x - self.piece.position.x;
+                let new_local_y = new_world_y - self.piece.position.y;
+                log!("({}, {})", new_local_x, new_local_y);
+
+
+                // 1. check if move is valid. If move is not valid, don't rotate
+                // 1.1 check if piece is inside right wall
+                let wall_kick_distance = new_world_x - self.width - 1;
+                if new_world_x > self.width - 1 && wall_kick_distance < wall_kick_translation.x {
+                    wall_kick_translation.x = wall_kick_distance;
+                }
+                // 1.2 check if piece is inside left wall
+                if new_world_x < 0 && new_world_x < wall_kick_translation.x {
+                    wall_kick_translation.x = new_world_x * -1;
+                }
+
+                // 1.3 check if piece is inside piece
+                let new_world_index = self.get_index(new_world_y, new_world_x);
+                if self.cells[new_world_index] != Cell::EMPTY {
+                    // TODO: complicated wall kick
+                    return false;
+                }
+
+                moves.push((new_local_x, new_local_y));
+            }
+        }
+        // move pieces
+        for i in 0..self.piece.cells.len() {
+            self.piece.cells[i] = Cell::EMPTY;
+        }
+        for i in &moves {
+            let new_index = self.piece.get_index(i.1, i.0);
+            log!("{}, ({}, {})", new_index, i.0, i.1);
+            self.piece.cells[new_index] = self.piece.cell;
+        }
+        self.piece.position.x = self.piece.position.x + wall_kick_translation.x;
+        match direction {
+            Direction::Right => self.piece.rotation.clockwise(),
+            Direction::Left => self.piece.rotation.counter_clockwise(),
+        }
+        false
     }
 
     // TODO: add some more "fun" logic https://tetris.fandom.com/wiki/Top_out
