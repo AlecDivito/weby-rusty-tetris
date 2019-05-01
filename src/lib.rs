@@ -387,17 +387,13 @@ impl Piece {
         self.position.y = self.position.y + 1;
     }
 
-    pub fn move_left(&mut self) {
+    pub fn move_piece(&mut self, direction: Direction) {
         if self.record_timer > 50.0 {
             self.reset_timer = true;
-            self.position.x = self.position.x - 1;
-        }
-    }
-
-    pub fn move_right(&mut self) {
-        if self.record_timer > 50.0 {
-            self.reset_timer = true;
-            self.position.x = self.position.x + 1;
+            match direction {
+                Direction::Left => self.position.x -= 1,
+                Direction::Right => self.position.x += 1,
+            };
         }
     }
 
@@ -520,8 +516,8 @@ impl Tetris {
                 1 => self.hold_piece(),
                 2 => self.rotate(Direction::Right), // self.rotate_clockwise(),
                 3 => self.rotate(Direction::Left),// self.rotate_counter_clockwise(),
-                4 => self.move_left(),
-                5 => self.move_right(),
+                4 => self.move_piece(Direction::Left),
+                5 => self.move_piece(Direction::Right),
                 6 => self.enable_soft_drop(),
                 7 => self.game.toggle_pause(),
                 _ => false,
@@ -672,24 +668,6 @@ impl Tetris {
 
     pub fn get_shadow_piece_position(&self) -> Point {
         self.shadow_piece_position.clone()
-    }
-
-    /// Try to move the active piece left
-    pub fn move_left(&mut self) -> bool {
-        if self.can_piece_go_left() {
-            self.piece.move_left();
-            self.update_shadow_piece_position();
-        }
-        true
-    }
-
-    /// Try to move the active piece right
-    pub fn move_right(&mut self) -> bool {
-        if self.can_piece_go_right() {
-            self.piece.move_right();
-            self.update_shadow_piece_position();
-        }
-        true
     }
 
     pub fn hard_drop(&mut self) -> bool {
@@ -1079,6 +1057,17 @@ impl Tetris {
             Direction::Left => self.piece.rotation.counter_clockwise(),
         }
         false
+    }
+
+    fn move_piece(&mut self, direction: Direction) -> bool {
+        let can_move = match direction {
+            Direction::Left => self.can_piece_go_left(),
+            Direction::Right => self.can_piece_go_right(),
+        };
+        if can_move {
+            self.piece.move_piece(direction);
+        }
+        true
     }
 
     // TODO: add some more "fun" logic https://tetris.fandom.com/wiki/Top_out
