@@ -669,46 +669,6 @@ impl Tetris {
     pub fn get_shadow_piece_position(&self) -> Point {
         self.shadow_piece_position.clone()
     }
-
-    pub fn hard_drop(&mut self) -> bool {
-        if self.can_hard_drop {
-            self.can_hard_drop = false;
-            self.score += ((self.height - self.piece.position.y) * 2) as u32;
-            self.piece.position = self.shadow_piece_position;
-            self.game.update_asap();
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    pub fn hold_piece(&mut self) -> bool {
-        // TODO: enabled by default
-        if !self.can_swap_piece {
-            return true;
-        }
-
-        if self.hold_piece == Cell::EMPTY {
-            self.hold_piece = self.piece.cell;
-            self.get_next_piece();
-        } else {
-            let new_piece = self.hold_piece;
-            self.hold_piece = self.piece.cell;
-            self.piece = Piece::new(new_piece);
-        }
-        self.can_swap_piece = false;
-        true
-    }
-
-    fn get_next_piece(&mut self) {
-        self.piece = match pop_front(&mut self.piece_queue) {
-            Some(x) => Piece::new(x),
-            None => Piece::random()
-        };
-        if self.piece_queue.len() <= 7 { // TODO: remove magic number
-            self.piece_queue.append(&mut Cell::random_piece_queue());
-        }
-    }
 }
 
 impl Tetris {
@@ -1068,6 +1028,46 @@ impl Tetris {
             self.piece.move_piece(direction);
         }
         true
+    }
+
+    fn hard_drop(&mut self) -> bool {
+        if self.can_hard_drop {
+            self.can_hard_drop = false;
+            self.score += ((self.height - self.piece.position.y) * 2) as u32;
+            self.piece.position = self.shadow_piece_position;
+            self.game.update_asap();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    fn hold_piece(&mut self) -> bool {
+        // TODO: enabled by default
+        if !self.can_swap_piece {
+            return true;
+        }
+
+        if self.hold_piece == Cell::EMPTY {
+            self.hold_piece = self.piece.cell;
+            self.get_next_piece();
+        } else {
+            let new_piece = self.hold_piece;
+            self.hold_piece = self.piece.cell;
+            self.piece = Piece::new(new_piece);
+        }
+        self.can_swap_piece = false;
+        true
+    }
+
+    fn get_next_piece(&mut self) {
+        self.piece = match pop_front(&mut self.piece_queue) {
+            Some(x) => Piece::new(x),
+            None => Piece::random()
+        };
+        if self.piece_queue.len() <= 7 { // TODO: remove magic number
+            self.piece_queue.append(&mut Cell::random_piece_queue());
+        }
     }
 
     // TODO: add some more "fun" logic https://tetris.fandom.com/wiki/Top_out
