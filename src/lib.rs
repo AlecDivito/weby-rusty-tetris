@@ -21,6 +21,51 @@ macro_rules! log {
     }
 }
 
+struct Timer {
+    last_time: f64,
+}
+
+impl Timer {
+    pub fn new() -> Timer {
+        Timer {
+            last_time: 0.0
+        }
+    }
+
+    pub fn get_elapsed_time(&mut self, current_time: f64) -> f64 {
+        let elapsed_time = current_time - self.last_time;
+        self.last_time = current_time;
+        elapsed_time
+    }
+}
+
+struct Game {
+    timer: Timer,
+    record_time: f64,
+}
+
+impl Game {
+    pub fn new() -> Game {
+        Game {
+            timer: Timer::new(),
+            record_time: 0.0,
+        }
+    }
+
+    pub fn update(&mut self, current_time: f64) {
+        self.record_time = self.record_time + self.timer.get_elapsed_time(current_time);
+    }
+
+    pub fn reset(&mut self) {
+        self.record_time = 0.0;
+    }
+
+    pub fn get_record_time(&self) -> f64 {
+        self.record_time
+    }
+}
+
+
 pub fn shuffle<T>(array: &mut Vec<T>) {
     for i in (0..array.len()).rev() {
         let mut j = (js_sys::Math::random() * ((i as f64) + 1.0)).round() as usize;
@@ -49,6 +94,20 @@ impl Point {
     pub fn new(x: i32, y: i32) -> Point {
         Point { x, y }
     }
+}
+
+#[repr(u8)]
+#[wasm_bindgen]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Action {
+    SoftDrop = 0,
+    HardDrop = 1,
+    RotateClockWise = 2,
+    RotateCounterClockWise = 3,
+    MoveLeft = 4,
+    MoveRight = 5,
+    HoldPiece = 6,
+    ToggleRunning = 7,
 }
 
 #[wasm_bindgen]
@@ -298,6 +357,7 @@ impl Piece {
 
 #[wasm_bindgen]
 pub struct Tetris {
+    game: Game,
     rows_completed: u32,
     level: u32,
     score: u32,
@@ -315,6 +375,7 @@ pub struct Tetris {
 impl Tetris {
     pub fn new() -> Tetris {
         set_panic_hook();
+        let game = Game::new();
         let score = 0;
         let rows_completed = 0;
         let level = 1;
@@ -337,6 +398,7 @@ impl Tetris {
         let can_swap_piece = true;
 
         Tetris {
+            game,
             rows_completed,
             level,
             score,
@@ -351,28 +413,57 @@ impl Tetris {
         }
     }
 
+    // TODO: Look into changing u8 into Action
+    // wasm_bindgen should be able to have custom types
+    pub fn event_handler(&mut self, events: &[u8]) {
+        for action in events {
+            let stop_updating = match action {
+                // 0 => // soft drop;
+                1 => self.hard_drop(),
+                2 => self.rotate_clockwise(),
+                3 => self.rotate_counter_clockwise(),
+                4 => self.move_left(),
+                5 => self.move_right(),
+                6 => self.hold_piece(),
+                // 7 => // stop time
+                _ => false,
+            };
+            if stop_updating {
+                break;
+            }
+        }
+    }
+
     /// Update the tetris board
-    pub fn update(&mut self) -> bool {
+    pub fn update(&mut self, elapsed_time: f64) -> bool {
         // TODO: use controller controls
         //       https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API
         // TODO: add mouse tracking
+        
+        self.game.update(elapsed_time);
         self.update_shadow_piece_position();
-        if self.can_piece_advance() {
-            self.piece.advance();
-            return false;
-        } else {
-            self.merge_piece_into_board();
-            self.get_next_piece();
-            self.can_swap_piece = true;
-            if self.is_topped_out() {
-                // TODO: game lost logic
-                log!("game lost");
-            } else {
-                self.update_board();
+
+        if self.game.get_record_time() > 1000.0 {
+            self.game.reset();
+            if self.can_piece_advance() {
                 self.piece.advance();
+                return false;
+            } else {
+                self.merge_piece_into_board();
+                self.get_next_piece();
+                self.can_swap_piece = true;
+                if self.is_topped_out() {
+                    // TODO: game lost logic
+                    log!("game lost");
+                } else {
+                    self.update_board();
+                    self.piece.advance();
+                }
+                return true;
             }
-            return true;
         }
+        false
+
 
         // TODO WHEN DONE (OR BASICITY DONE):
         // CHECK OUT https://shop.tetris.com/
@@ -489,29 +580,32 @@ impl Tetris {
     }
 
     /// Try to move the active piece left
-    pub fn move_left(&mut self) {
+    pub fn move_left(&mut self) -> bool {
         if self.can_piece_go_left() {
             self.piece.move_left();
             self.update_shadow_piece_position();
         }
+        true
     }
 
     /// Try to move the active piece right
-    pub fn move_right(&mut self) {
+    pub fn move_right(&mut self) -> bool {
         if self.can_piece_go_right() {
             self.piece.move_right();
             self.update_shadow_piece_position();
         }
+        true
     }
 
-    pub fn hard_drop(&mut self) {
+    pub fn hard_drop(&mut self) -> bool {
         log!("unimplemented");
+        false
     }
 
-    pub fn hold_piece(&mut self) {
+    pub fn hold_piece(&mut self) -> bool {
         // TODO: enabled by default
         if !self.can_swap_piece {
-            return;
+            return true;
         }
 
         if self.hold_piece == Cell::EMPTY {
@@ -523,16 +617,18 @@ impl Tetris {
             self.piece = Piece::new(new_piece);
         }
         self.can_swap_piece = false;
+        true
     }
 
-    pub fn rotate_counter_clockwise(&mut self) {
-        log!("unimplemented")
+    pub fn rotate_counter_clockwise(&mut self) -> bool {
+        log!("unimplemented");
+        true
     }
 
     /// Try to rotate the active piece
-    pub fn rotate_clockwise(&mut self) {
+    pub fn rotate_clockwise(&mut self) -> bool {
         if self.piece.cell == Cell::O {
-            return;
+            return false;
         }
 
         let box_size = self.piece.get_bounding_box_size();
@@ -586,7 +682,7 @@ impl Tetris {
                 let new_world_index = self.get_index(new_world_y, new_world_x);
                 if self.cells[new_world_index] != Cell::EMPTY {
                     // TODO: complicated wall kick
-                    return;
+                    return false;
                 }
 
                 moves.push((new_local_x, new_local_y));
@@ -602,6 +698,7 @@ impl Tetris {
         }
         self.piece.position.x = self.piece.position.x + wall_kick_translation.x;
         self.piece.rotation.clockwise();
+        false
     }
 
     fn get_next_piece(&mut self) {
@@ -815,7 +912,6 @@ impl Tetris {
         for col in (0..size).rev() {
             if col + world_x >= self.width || col + world_x < 0 {
                 // bounding box is off page, no point in checking
-                log!("skipping: {}", col + world_x);
                 continue;
             }
             for row in (0..size).rev() {
@@ -837,7 +933,6 @@ impl Tetris {
                     let world_cell = self.cells[self.get_index(world_row, world_col)];
                     if world_cell != Cell::EMPTY && world_y > world_row - (row + 1) {
                         world_y = world_row - (row + 1);
-                        log!("col: {}, row: {}, offset: {}, point: ({}, {})", col, row, offset, world_x, world_y);
                         breakout = true;
                     }
                     if breakout {
@@ -847,7 +942,6 @@ impl Tetris {
             }
         }
         self.shadow_piece_position = Point { x: world_x, y: world_y };
-        log!("point: ({} {})", self.shadow_piece_position.x, self.shadow_piece_position.y);
     }
 
     fn is_row_full(&self, row: i32) -> bool {
