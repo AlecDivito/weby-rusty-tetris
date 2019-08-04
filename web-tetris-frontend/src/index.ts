@@ -1,4 +1,4 @@
-import { Tetris } from "rusty-web-tetris";
+import { Tetris } from "../../tetris-logic/pkg/rusty_web_tetris";
 import Game from "./Game";
 
 const t = new Game(Tetris.new());

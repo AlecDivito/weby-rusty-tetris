@@ -1,5 +1,5 @@
-import { Cell, Tetris, Action } from "rusty-web-tetris";
-import { memory } from "rusty-web-tetris/rusty_web_tetris_bg";
+import { Cell, Tetris, Action } from "../../tetris-logic/pkg/rusty_web_tetris";
+import { memory } from "../../tetris-logic/pkg/rusty_web_tetris_bg";
 import InputController from "./InputController";
 
 const DEBUG_GAME = false;
