@@ -10,7 +10,7 @@ project is at. So a PWA that is installable to a users phone or computer
 with use of indexDB to store intresting statistics of the games played.
 
 ## Project Screen Shots
-![Screen shot of current build of tetris project](https://raw.githubusercontent.com/AlecDivito/alecdivito.github.io/master/src/images/tetris.png)
+![Screen shot of current build of tetris project](https://raw.githubusercontent.com/AlecDivito/web-resume/master/src/data/images/tetris.png)
 
 ## Installation and Setup Instructions
 
