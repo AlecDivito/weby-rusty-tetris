@@ -203,14 +203,6 @@ impl Game {
         self.height - 20
     }
 
-    /// Return the next level's goal
-    /// 
-    /// The next levels goal is always the current level * 5
-    pub fn get_next_level_goal(&self) -> u32 {
-        // TODO: remove magic number
-        self.level * 5
-    }
-
     /// Return the current level of the game board
     pub fn get_level(&self) -> u32 {
         self.level
@@ -226,16 +218,20 @@ impl Game {
         self.hold_piece
     }
 
+    /// Get the cells that are in queue to go next
+    /// TODO: Give interface to be called without wasm_bindgen
     pub fn get_queued_pieces(&self) -> * const Cell {
         self.piece_queue.as_ptr()
     }
 
     /// Return a pointer to the first element in the boards vector
+    /// TODO: Give interface to be called without wasm_bindgen
     pub fn get_cells(&self) -> * const Cell {
         self.cells.as_ptr()
     }
 
-    /// Return the local coordinates of the active piece
+    /// Get the cells that make up the falling piece
+    /// TODO: Give interface to be called without wasm_bindgen
     pub fn get_pieces(&self) -> * const Cell {
         self.piece.get_piece()
     }
@@ -262,6 +258,14 @@ impl Game {
 }
 
 impl Game {
+
+    /// Return the next level's goal
+    /// 
+    /// The next levels goal is always the current level * 5
+    fn get_next_level_goal(&self) -> u32 {
+        // TODO: remove magic number
+        self.level * 5
+    }
 
     /// Convert row and column to a position inside of the
     /// board array
@@ -294,8 +298,6 @@ impl Game {
     /// otherwise return false to stop advancement
     fn can_piece_advance(&self) -> bool {
         // 1. find the lowest point on the shape
-        // TODO: improve this by going backwards and stopping
-        // after we find the first one
         for row in 0..self.piece.get_bounding_box_size() {
             for col in 0..self.piece.get_bounding_box_size() {
                 let local_index = self.piece.get_index(row, col);
@@ -328,8 +330,6 @@ impl Game {
     /// Check if a piece can move right
     fn can_piece_go_right(&self) -> bool {
         // 1. find the rightest point on the shape
-        // TODO: improve this by going backwards and stopping
-        // after we find the first one
         for row in 0..self.piece.get_bounding_box_size() {
             for col in 0..self.piece.get_bounding_box_size() {
                 let local_index = self.piece.get_index(row, col);
@@ -361,8 +361,6 @@ impl Game {
     /// Check if a piece can move left
     fn can_piece_go_left(&self) -> bool {
         // 1. find the rightest point on the shape
-        // TODO: improve this by going backwards and stopping
-        // after we find the first one
         for row in 0..self.piece.get_bounding_box_size() {
             for col in 0..self.piece.get_bounding_box_size() {
                 let local_index = self.piece.get_index(row, col);

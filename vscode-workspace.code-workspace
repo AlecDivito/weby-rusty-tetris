@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "tetris-logic"
+		},
+		{
+			"path": "web-tetris-frontend"
+		}
+	],
+	"settings": {}
+}

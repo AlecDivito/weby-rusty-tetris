@@ -1,15 +1,13 @@
-# 🦀🕸️ `wasm-pack-template`
+# Tetris
 
-A template for kick starting a Rust and WebAssembly project using
-[`wasm-pack`](https://github.com/rustwasm/wasm-pack).
+A rust library that contains the logic to run Tetris, Bring-your-own-graphics
 
-[**📚 Read this template tutorial! 📚**][template-docs]
 
-This template is designed for compiling Rust libraries into WebAssembly and
-publishing the resulting package to NPM.
+## License
 
-Be sure to check out [other `wasm-pack` tutorials online][tutorials] for other
-templates and usages of `wasm-pack`.
+## Contributions
+
+## Dependencies
 
 [tutorials]: https://rustwasm.github.io/docs/wasm-pack/tutorials/index.html
 [template-docs]: https://rustwasm.github.io/docs/wasm-pack/tutorials/npm-browser-packages/index.html
