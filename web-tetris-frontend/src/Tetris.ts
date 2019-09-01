@@ -1,12 +1,21 @@
-import { Cell, Tetris, Action } from "../../tetris-logic/pkg/rusty_web_tetris";
+import { Cell, Game, Action } from "../../tetris-logic/pkg/rusty_web_tetris";
 import { memory } from "../../tetris-logic/pkg/rusty_web_tetris_bg";
 import InputController from "./InputController";
 
 const DEBUG_GAME = false;
+const CELL_PREVIEW_AMOUNT = 6;
 
-class Game {
+/**
+ * Tetris is a small layer that surrounds our tetris game logic in web assembly.
+ * Tetris's only job is to run the main loop of the program and update the game
+ * board as the state of the game changes
+ * 
+ * Tetris is strongly linked to the index.html page and assumes certain span and
+ * canvas elements will be there
+ */
+class Tetris {
 
-    private tetris: Tetris;
+    private tetrisGame: Game;
     private inputController: InputController;
 
     private readonly canvas: HTMLCanvasElement;
@@ -22,14 +31,23 @@ class Game {
         cellSize: 35,
     };
 
+    /**
+     * Is the game paused
+     */
     get isPaused() {
         return this.animationId === undefined;
     }
 
+    /**
+     * Is the game running?
+     */
     get isRunning() {
         return this.animationId !== undefined;
     }
 
+    /**
+     * Get the height of the board
+     */
     private get height() {
         let height = this.boardHeight;
         if (DEBUG_GAME) {
@@ -38,6 +56,10 @@ class Game {
         return height;
     }
 
+    /**
+     * Get the offset of the game board
+     * (the board is 5 more cells higher then what is presided)
+     */
     private get offsetHeight() {
         let offset = this.totalHeight - this.boardHeight;
         if (DEBUG_GAME) {
@@ -46,11 +68,16 @@ class Game {
         return offset;
     }
 
-    constructor(tetris: Tetris, config: {} = {}) {
-        this.tetris = tetris;
-        this.width = tetris.get_width();
-        this.totalHeight = tetris.get_height();
-        this.boardHeight = this.totalHeight - tetris.get_offset_height();
+    /**
+     * Create tetris
+     * @param game tetris game logic
+     * @param config settings that change the way the game looks
+     */
+    constructor(game: Game, config: {} = {}) {
+        this.tetrisGame = game;
+        this.width = game.get_width();
+        this.totalHeight = game.get_height();
+        this.boardHeight = this.totalHeight - game.get_offset_height();
         this.canvas = document.getElementById("tetris") as HTMLCanvasElement;
         this.ctx = this.canvas.getContext("2d")!;
         this.config = { ...this.config, ...config };
@@ -60,11 +87,22 @@ class Game {
         this.inputController.start();
     }
 
-    public startGame() {
+    /***************************************************************************
+     * GAME LOGIC
+     **************************************************************************/
+
+    /**
+     * Start tetris game
+     */
+    public startTetris() {
         this.updateQueuedPieces();
         this.play();
     }
 
+    /**
+     * Pause the game
+     * Throws error when game is already paused
+     */
     private pause() {
         if (this.isRunning) {
             cancelAnimationFrame(this.animationId!);
@@ -74,6 +112,10 @@ class Game {
         }
     }
 
+    /**
+     * Unpause the game
+     * Throws error when game is already in play
+     */
     private play() {
         if (this.isPaused) {
             this.animationId = requestAnimationFrame(this.run);
@@ -82,7 +124,11 @@ class Game {
         }
     }
 
+    /**
+     * Main loop of the program, try to run and update the game at 60 fps
+     */
     private run = () => {
+        // stop run look if game becomes paused
         if (this.inputController.Input.Escape) {
             if (this.isRunning) {
                 this.pause();
@@ -90,24 +136,33 @@ class Game {
                 this.play();
             }
         }
-        this.tetris.event_handler(this.inputController.getEventQueue());
-        const boardMerged = this.tetris.update(performance.now());
+        // handle all the queued events on the input controller
+        this.tetrisGame.event_handler(this.inputController.getEventQueue());
+        const boardMerged = this.tetrisGame.update(performance.now());
         this.drawGrid();
         this.drawCells();
         this.drawPiece();
         this.updateHoldPiece();
-        document.getElementById("score")!.textContent = `${this.tetris.get_score()}`;
+        document.getElementById("score")!.textContent = `${this.tetrisGame.get_score()}`;
 
+        // A piece was merged into the board
         if (boardMerged) {
             // update queued pieces view
             this.updateQueuedPieces();
-            document.getElementById("level")!.textContent = `${this.tetris.get_level()}`;
-            document.getElementById("rows_completed")!.textContent = `${this.tetris.get_rows_completed()}`;
+            document.getElementById("level")!.textContent = `${this.tetrisGame.get_level()}`;
+            document.getElementById("rows_completed")!.textContent = `${this.tetrisGame.get_rows_completed()}`;
         }
 
         this.animationId = requestAnimationFrame(this.run);
     }
 
+    /***************************************************************************
+     * DRAW CODE
+     **************************************************************************/
+
+    /**
+     * Draw the grid of the play field
+     */
     private drawGrid() {
         this.ctx.beginPath();
         this.ctx.strokeStyle = this.config.gridColor;
@@ -133,8 +188,11 @@ class Game {
         this.ctx.stroke();
     }
 
+    /**
+     * Draw all the cells of the game board
+     */
     private drawCells() {
-        const cellsPtr = this.tetris.get_cells();
+        const cellsPtr = this.tetrisGame.get_cells();
         const cells = new Uint8Array(memory.buffer, cellsPtr, this.width * this.totalHeight);
         this.ctx.beginPath();
         for (let row = this.offsetHeight; row < this.totalHeight; row++) {
@@ -165,12 +223,15 @@ class Game {
         }
     }
 
+    /**
+     * Draw player controller falling piece
+     */
     private drawPiece() {
-        const position = this.tetris.get_piece_position();
-        const shadowPiecePosition = this.tetris.get_shadow_piece_position();
-        const boundingBox = this.tetris.get_piece_bounding_box();
-        const cellsPtr = this.tetris.get_pieces();
-        const cellType = this.tetris.get_piece_type();
+        const position = this.tetrisGame.get_piece_position();
+        const shadowPiecePosition = this.tetrisGame.get_shadow_piece_position();
+        const boundingBox = this.tetrisGame.get_piece_bounding_box();
+        const cellsPtr = this.tetrisGame.get_pieces();
+        const cellType = this.tetrisGame.get_piece_type();
         const cells = new Uint8Array(memory.buffer, cellsPtr, boundingBox * boundingBox);
 
         this.ctx.beginPath();
@@ -189,10 +250,18 @@ class Game {
         }
     }
 
+    /**
+     * Get and update preview canvas's with the next queued pieces
+     */
     private updateQueuedPieces() {
         const previews: NodeListOf<HTMLCanvasElement> = document.querySelectorAll(".preview");
-        const queuedPieces = this.tetris.get_queued_pieces();
-        const cells = new Uint8Array(memory.buffer, queuedPieces, 6);
+        // Get the first 6 cells types (each cell is 1 byte)
+        const queuedPieces = this.tetrisGame.get_queued_pieces();
+        const cells = new Uint8Array(
+          memory.buffer,
+          queuedPieces,
+          CELL_PREVIEW_AMOUNT
+        );
         previews.forEach( (canvas, index) => {
             const context = canvas.getContext("2d")!;
             const cell = cells[index];
@@ -201,7 +270,7 @@ class Game {
             context.beginPath();
             context.fillStyle = "#000000";
             context.fillRect(0, 0, 150, 150);
-
+            // set the needed area to draw the cells on the preview canvas's
             let boundingBox = 3;
             if (cell === Cell.O) {
                 boundingBox = 2;
@@ -209,7 +278,7 @@ class Game {
                 boundingBox = 4;
             }
 
-            // piece
+            // draw the cell
             const pieces = getCells(cell);
             context.beginPath();
             context.fillStyle = this.getColor(cell);
@@ -234,9 +303,12 @@ class Game {
         });
     }
 
+    /**
+     * Color in the piece that is currently being held
+     */
     private updateHoldPiece() {
         const holdCanvas = document.getElementById("hold_piece") as HTMLCanvasElement;
-        const holdCell = this.tetris.get_hold_piece();
+        const holdCell = this.tetrisGame.get_hold_piece();
         const context = holdCanvas.getContext("2d")!;
         // draw in background
         context.beginPath();
@@ -274,6 +346,11 @@ class Game {
         context.stroke();
     }
 
+    /**
+     * Draw a cell at a certain row and column on the board
+     * @param row row cell is on
+     * @param col column cell is on
+     */
     private drawCell(row: number, col: number) {
         this.ctx.fillRect(
             col * (this.config.cellSize + 1) + 1,
@@ -283,10 +360,19 @@ class Game {
         );
     }
 
+    /**
+     * Get the index of a cell as if the 1D board was 2D
+     * @param row y
+     * @param col x
+     */
     private getIndex(row: number, col: number) {
         return row * this.width + col;
     }
 
+    /**
+     * Given the type of cell that needs coloring, return a hex color
+     * @param cell type of cell
+     */
     private getColor(cell: Cell): string {
         switch (cell) {
             case Cell.EMPTY:
@@ -311,6 +397,10 @@ class Game {
     }
 }
 
+/**
+ * Get array that makes up the cell on the grid
+ * @param cell type of cell
+ */
 function getCells(cell: Cell) {
     switch (cell) {
         case Cell.O:
@@ -346,4 +436,4 @@ function getCells(cell: Cell) {
     }
 }
 
-export default Game;
+export default Tetris;

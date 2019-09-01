@@ -57,16 +57,30 @@ export default class InputController {
         112: "F1",
     };
 
+    /**
+     * Create a Input controller
+     */
     constructor() {
         this.listening = false;
     }
 
+    /**
+     * Start the input controller.
+     * Throws error when controller is already listening for events
+     */
     public start() {
+        if (this.listening) {
+            throw new Error("You can't start listening to the game because you already are!");
+        }
         window.addEventListener("keyup", this.keyboardEvent);
         window.addEventListener("keydown", this.keyboardEvent);
         this.listening = true;
     }
 
+    /**
+     * Stop the input controller, and remove the event listeners from the window.
+     * Throws error if the controller is already in a stopped state
+     */
     public stop() {
         if (!this.listening) {
             throw new Error("Must start() the InputController before you can stop() it!");
@@ -101,6 +115,9 @@ export default class InputController {
         if (i.Numpad2 || i.ArrowDown) {
             eventQueue.push(Action.SoftDrop);
         }
+        if (i.Escape) {
+            eventQueue.push(Action.ToggleRunning)
+        }
         // TODO: THIS SHOULDN'T BE NEEDED, POST An ISSUE
         const byteEventQueue = new Uint8Array(eventQueue.length);
         for (let j = 0; j < eventQueue.length; j++) {
@@ -119,15 +136,26 @@ export default class InputController {
         return byteEventQueue;
     }
 
+    /**
+     * Callback that listens for keyboard events
+     */
     private keyboardEvent = (event: KeyboardEvent) => {
         const code = this.getKeyCode(event);
         this.input[code] = event.type === "keydown";
         event.preventDefault();
     }
 
+    /**
+     * Try and get the key code of the keyboard button pressed
+     * @param event Keyboard browser Event
+     */
     private getKeyCode(event: KeyboardEvent): string {
+        // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
+        // event.code only supports the QWERTY keyboard and assumes everyone
+        // is running that keyboard layout
         let code = event.code;
         if (!code) {
+            // TODO: remove "keyCode" and replace it with "key"
             code = this.keyMap[event.keyCode];
         }
         return code;
