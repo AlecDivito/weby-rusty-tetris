@@ -103,7 +103,7 @@ class Tetris {
      * Pause the game
      * Throws error when game is already paused
      */
-    private pause() {
+    public pause() {
         if (this.isRunning) {
             cancelAnimationFrame(this.animationId!);
             this.animationId = undefined;
@@ -116,7 +116,7 @@ class Tetris {
      * Unpause the game
      * Throws error when game is already in play
      */
-    private play() {
+    play() {
         if (this.isPaused) {
             this.animationId = requestAnimationFrame(this.run);
         } else {

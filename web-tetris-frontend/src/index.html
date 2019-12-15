@@ -11,12 +11,12 @@
         - (required) Game Page
         - (optional) Quick Game Mode (just go start a game)
         - (optional) Select Game Mode Page
-        - (optional) Controls Page
+        - (optional) Controls Page 
         - (optional) Stats? idk
     -->
     <div id="main-menu-page">
       <h1>Tetris</h1>
-      <button>Play Game</button>
+      <button id="main-menu-play">Play Game</button>
     </div>
     
     <!-- Game page
@@ -42,6 +42,7 @@
         <h3>Score: <span id="score">0</span></h3>
         <h3>level: <span id="level">0</span></h3>
         <h3>Rows:  <span id="rows_completed">0</span></h3>
+        <button id="game-pause">⏸</button>
       </div>
       <div class="container__item item--main">
         <canvas id="tetris"></canvas>
@@ -66,14 +67,14 @@
       Examples:
         https://www.pinterest.co.uk/pin/838443655599579811/
     -->
-    <div id="pause-game-page" class="modal card">
+    <div id="pause-game-modal" class="modal card">
       <h1 class="card__title">Pause Game</h1>
       <div class="card__content">
-        <button>Resume</button>
-        <button>Restart</button>
-        <button>Controls</button>
-        <button>Settings</button>
-        <button>Exit Game</button>
+        <button id="pause-game-resume">Resume</button>
+        <button id="pause-game-restart">Restart</button>
+        <button id="pause-game-control">Controls</button>
+        <button id="pause-game-setting">Settings</button>
+        <button id="pause-game-exit">Exit Game</button>
       </div>
     </div>
 
@@ -87,7 +88,7 @@
       Examples:
         https://dribbble.com/shots/1216488-Tetris-Game-Over
     -->
-    <div id="finished-game-page" class="modal card">
+    <div id="game-over-modal" class="modal card">
       <h1 class="card__title">Game Over</h1>
       <div class="card__content">
         <h3 class="card__content__title">High Scores</h3>
