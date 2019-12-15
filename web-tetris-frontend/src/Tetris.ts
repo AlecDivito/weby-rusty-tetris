@@ -46,6 +46,13 @@ class Tetris {
     }
 
     /**
+     * Is the game over?
+     */
+    get isGameOver() {
+        return this.tetrisGame.is_game_over()
+    }
+
+    /**
      * Get the height of the board
      */
     private get height() {

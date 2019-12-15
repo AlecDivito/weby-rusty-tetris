@@ -33,6 +33,7 @@ pub struct Game {
     shadow_piece_position: Point,
     can_swap_piece: bool,
     hold_piece: Cell,
+    game_over: bool,
 }
 
 /// try to remove the first element of the array
@@ -55,6 +56,7 @@ impl Game {
         let width = 10;
         let height = 25;
         let soft_drop = false;
+        let game_over = false;
 
         let cells = (0..width * height)
             .map(|_i| Cell::EMPTY).collect();
@@ -87,6 +89,7 @@ impl Game {
             shadow_piece_position,
             can_swap_piece,
             hold_piece,
+            game_over,
         }
     }
 
@@ -144,6 +147,7 @@ impl Game {
                 self.get_next_piece();
                 self.can_swap_piece = true;
                 if self.is_topped_out() {
+                    self.game_over = true;
                     // TODO: game lost logic
                     log!("game lost");
                 } else {
@@ -181,6 +185,10 @@ impl Game {
             // Game Game Design by Alexey Pajitnov.
             // Game Logo Design by Roger Dean.
             // All Rights Reserved.
+    }
+
+    pub fn is_game_over(&self) -> bool {
+        self.game_over
     }
 
     /// Get the current score of the running game
