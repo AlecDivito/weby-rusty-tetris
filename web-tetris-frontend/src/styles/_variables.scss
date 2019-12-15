@@ -4,11 +4,12 @@ $white: #fff;
 // extra
 $border-radius: 0.5rem;
 $padding: 1rem;
+$margin: 1rem;
 
 /*******************************************************************************
  * Pages
  ******************************************************************************/
-
+$pause-list-margin-bottom: $margin;
 
 /*******************************************************************************
  * Components
@@ -18,8 +19,8 @@ $card-padding: $padding;
 $card-background-color: $white;
 $card-border-radius: $border-radius;
 
-$card-title-margin: 1rem 0rem;
-$card-content-margin: 0rem 0rem 1rem 0rem;
+$card-title-margin: $margin 0rem;
+$card-content-margin: 0rem 0rem $margin 0rem;
 
 // Button
 $button-color: $white;
