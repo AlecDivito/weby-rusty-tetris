@@ -1,4 +1,5 @@
 const CopyWebpackPlugin = require("copy-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const path = require('path');
 
 module.exports = {
@@ -19,11 +20,25 @@ module.exports = {
       {
         test: /\.wasm$/,
         type: "webassembly/experimental"
+      },
+      {
+        test: /\.s[ac]ss$/i,
+        use: [
+          MiniCssExtractPlugin.loader,
+          // interprets @import and @url()
+          'css-loader',
+          // Complies Sass to CSS
+          'sass-loader',
+        ]
       }
     ]
   },
   plugins: [
-    new CopyWebpackPlugin(['src/index.html'])
+    new CopyWebpackPlugin(['src/index.html']),
+    new MiniCssExtractPlugin({
+      filename: '[name].css',
+      chunkFilename: '[id].css'
+    })
   ],
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.wasm']

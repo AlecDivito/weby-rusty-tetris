@@ -1,0 +1,22 @@
+#tetris {
+    box-shadow: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
+}
+.container {
+    display: grid;
+    grid-template-columns: 150px auto 150px;
+    grid-template-rows: auto;
+    grid-template-areas: "sidebar main rightbar";
+    grid-column-gap: 2rem;
+}
+.container__item {
+    width: 100%;
+}
+.item--left {
+    grid-area: sidebar;
+}
+.item--main {
+    grid-area: main
+}
+.item--right {
+    grid-area: rightbar;
+}
