@@ -25,10 +25,10 @@
         // grid-template-columns: 50px auto 50px;
         // grid-template-rows: auto;
         grid-template-areas: "sidebar main rightbar";
-        // grid-column-gap: 4px;
+        grid-column-gap: 2px;
     
         width: 100%;
-        height: calc(100% - 30px);
+        height: calc(100% - 90px);
     
         &__item {
             overflow: hidden;

@@ -113,7 +113,26 @@ class Tetris {
         const holdPiece = document.getElementById('hold_piece') as HTMLCanvasElement;
         holdPiece.height = this.config.previewCellSize * 4;
         holdPiece.width = this.config.previewCellSize * 4;
+
+        /**
+         * Initialize mouse controls
+         * 
+         */
+        this.canvas.addEventListener("mousemove", (event) => {
+            this.mouseX = event.clientX - this.canvas.offsetLeft;
+            this.mouseY = event.clientY - this.canvas.offsetTop;
+
+            let offset = this.tetrisGame.get_piece_bounding_box() / 2;
+
+            this.mouseX = Math.round(this.mouseX / this.config.cellSize - offset);
+            this.mouseY = Math.round(this.mouseY / this.config.cellSize);
+        });
+        this.canvas.addEventListener('mouseover', event => console.log(event));
+        this.canvas.addEventListener('mouseenter', event => console.log(event));
+        this.canvas.addEventListener('mouseleave', event => console.log(event));
     }
+    private mouseX = 0;
+    private mouseY = 0;
 
     /***************************************************************************
      * GAME LOGIC
@@ -172,6 +191,7 @@ class Tetris {
         // }
         // handle all the queued events on the input controller
         this.tetrisGame.event_handler(this.inputController.getEventQueue());
+        this.tetrisGame.touch_event_handler(this.mouseX, this.mouseY);
         const boardMerged = this.tetrisGame.update(performance.now());
         this.drawGrid();
         this.drawCells();

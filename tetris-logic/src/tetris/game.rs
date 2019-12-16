@@ -93,8 +93,8 @@ impl Game {
         }
     }
 
-    // TODO: Look into changing u8 into Action
-    // wasm_bindgen should be able to have custom types
+    /// TODO: Look into changing u8 into Action
+    /// wasm_bindgen should be able to have custom types
     pub fn event_handler(&mut self, events: &mut [u8]) {
         events.sort();
         if !events.contains(&(Action::HardDrop as u8)) {
@@ -118,7 +118,21 @@ impl Game {
             }
         }
         // update shadow piece position after piece is done moving
+        // TODO: move this to the update function. idk why its here
         self.update_shadow_piece_position();
+    }
+
+    pub fn touch_event_handler(&mut self, target_x_pos: i32, target_y_pos: i32) {
+        if target_x_pos > self.piece.get_position().x {
+            while self.can_piece_go_right() && target_x_pos > self.get_piece_position().x {
+                self.piece.FORCE_MOVE_PIECE(Direction::Right);
+            } 
+        }
+        else if target_x_pos < self.piece.get_position().x {
+            while self.can_piece_go_left() && target_x_pos < self.get_piece_position().x {
+                self.piece.FORCE_MOVE_PIECE(Direction::Left);
+            }
+        }
     }
 
     /// Update the tetris board

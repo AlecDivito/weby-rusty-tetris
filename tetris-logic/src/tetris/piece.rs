@@ -154,6 +154,15 @@ impl Piece {
         }
     }
 
+    // TODO: Please clean this up and actually fix the functions so that the
+    //       timer is not in the way
+    pub fn FORCE_MOVE_PIECE(&mut self, direction: Direction) {
+        match direction {
+            Direction::Left => self.position.x -= 1,
+            Direction::Right => self.position.x += 1,
+        };
+    }
+
     pub fn get_origin(&self) -> Point {
         match self.cell {
             Cell::I => match self.rotation {
