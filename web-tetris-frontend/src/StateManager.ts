@@ -56,13 +56,13 @@ export default class StateManager {
 
     GoToGameAndRestartGame() {
         this.GoToGame();
-        this.game = new Tetris(Game.new());
+        this.game = new Tetris(Game.new(), this.gamePage.CalculateTetrisConfig());
         this.game.startTetris();
     }
 
     GoToGameAndStartGame() {
         this.GoToGame();
-        this.game = new Tetris(Game.new());
+        this.game = new Tetris(Game.new(), this.gamePage.CalculateTetrisConfig());
         this.game.startTetris();
     }
 

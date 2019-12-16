@@ -36,24 +36,27 @@
         https://www.pinterest.ca/fduy96/tetris-ui/
         http://www.douvilleart.com/new-page-81
     -->
-    <div id="game-page" class="container game">
-      <div class="container__item item--left">
-        <canvas id="hold_piece"></canvas>
-        <h3>Score: <span id="score">0</span></h3>
-        <h3>level: <span id="level">0</span></h3>
-        <h3>Rows:  <span id="rows_completed">0</span></h3>
-        <button id="game-pause">⏸</button>
+    <div id="game-page" class="game">
+      <div class="game__bar">
+        top
       </div>
-      <div class="container__item item--main">
-        <canvas id="tetris"></canvas>
+      <div class="game__bar">
+        Top Bottom
       </div>
-      <div class="container__item item--right">
-        <canvas class="preview"></canvas>
-        <canvas class="preview"></canvas>
-        <canvas class="preview"></canvas>
-        <canvas class="preview"></canvas>
-        <canvas class="preview"></canvas>
-        <canvas class="preview"></canvas>
+      <div class="game__board">
+        <div id="game__board__item--left" class="game__board__item game__board__item--left">
+          <canvas id="hold_piece"></canvas>
+          <h3>Score: <span id="score">0</span></h3>
+          <h3>level: <span id="level">0</span></h3>
+          <h3>Rows:  <span id="rows_completed">0</span></h3>
+          <button id="game-pause">⏸</button>
+        </div>
+        <div id="game__board__item--main" class="game__board__item game__board__item--main">
+          <canvas id="tetris"></canvas>
+        </div>
+        <div id="game__board__item--right" class="game__board__item game__board__item--right">
+          <canvas id="preview"></canvas>
+        </div>
       </div>
     </div>
 
