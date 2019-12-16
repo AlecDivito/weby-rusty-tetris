@@ -1,25 +1,27 @@
 import Page from "./Page";
-import StateManager from "..";
 import { GetElementById } from "../util";
+import StateManager from "../StateManager";
 
 export default class GameOverModal extends Page {
     
     private restartBtn: HTMLButtonElement;
     private exitGameBtn: HTMLButtonElement;
 
-    constructor(router: StateManager) {
-        super("game-over-modal", router);
-        this.restartBtn = GetElementById('pause-game-restart') as HTMLButtonElement;
-        this.exitGameBtn = GetElementById('pause-game-exit') as HTMLButtonElement;
-        this.restartBtn.addEventListener('click', this.restartGame);
+    constructor() {
+        super("game-over-modal");
+        this.exitGameBtn = GetElementById('game-over-exit') as HTMLButtonElement;
+        this.restartBtn = GetElementById('game-over-restart') as HTMLButtonElement;
         this.exitGameBtn.addEventListener('click', this.exitGame);
-    }
-
-    private restartGame = () => {
-        throw new Error("TODO: implement restart Game Button");
+        this.restartBtn.addEventListener('click', this.restartGame);
     }
 
     private exitGame = () => {
-        throw new Error("TODO: implement exit page button");
+        console.log('exit current game');
+        StateManager.GetInstance().GoToMainMenu();
     }
+
+    private restartGame = () => {
+        StateManager.GetInstance().GoToGameAndRestartGame();
+    }
+
 }

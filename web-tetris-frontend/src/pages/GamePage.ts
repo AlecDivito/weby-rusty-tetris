@@ -1,13 +1,13 @@
 import Page from "./Page";
-import StateManager from "..";
 import { GetElementById } from "../util";
+import StateManager from "../StateManager";
 
 export default class GamePage extends Page {
     
     private pauseBtn: HTMLButtonElement;
 
-    constructor(router: StateManager) {
-        super('game-page', router);
+    constructor() {
+        super('game-page');
         this.pauseBtn = GetElementById('game-pause') as HTMLButtonElement;
         this.pauseBtn.addEventListener('click', this.pauseGame);
     }
@@ -17,6 +17,6 @@ export default class GamePage extends Page {
     }
 
     pauseGame = () => {
-        this.router.GoToPauseGameModal();
+        StateManager.GetInstance().GoToPauseModalAndPauseGame();
     }
 }

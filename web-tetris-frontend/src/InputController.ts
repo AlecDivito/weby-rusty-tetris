@@ -142,7 +142,6 @@ export default class InputController {
     private keyboardEvent = (event: KeyboardEvent) => {
         const code = this.getKeyCode(event);
         this.input[code] = event.type === "keydown";
-        event.preventDefault();
     }
 
     /**

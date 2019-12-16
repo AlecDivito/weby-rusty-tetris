@@ -1,5 +1,5 @@
 import Page from './Page';
-import StateManager from '..';
+import StateManager from "../StateManager";
 import { GetElementById } from '../util';
 
 export default class PauseModal extends Page {
@@ -9,8 +9,8 @@ export default class PauseModal extends Page {
     private settingsBtn: HTMLButtonElement;
     private exitGameBtn: HTMLButtonElement;
 
-    constructor(router: StateManager) {
-        super('pause-game-modal', router);
+    constructor() {
+        super('pause-game-modal');
 
         this.resumeBtn = GetElementById('pause-game-resume') as HTMLButtonElement;
         this.restartBtn = GetElementById('pause-game-restart') as HTMLButtonElement;
@@ -26,7 +26,7 @@ export default class PauseModal extends Page {
     }
 
     private resumeGame = () => {
-        this.router.GoToGame();
+        StateManager.GetInstance().GoToGameAndResumeGame();
     }
 
     private restartGame = () => {
@@ -42,6 +42,6 @@ export default class PauseModal extends Page {
     }
     
     private exitGame = () => {
-        throw new Error("TODO: implement exit page button");
+        StateManager.GetInstance().GoToMainMenu();
     }
 }

@@ -1,6 +1,7 @@
 import { Cell, Game, Action } from "../../tetris-logic/pkg/rusty_web_tetris";
 import { memory } from "../../tetris-logic/pkg/rusty_web_tetris_bg";
 import InputController from "./InputController";
+import StateManager from "./StateManager";
 
 const DEBUG_GAME = false;
 const CELL_PREVIEW_AMOUNT = 6;
@@ -136,13 +137,19 @@ class Tetris {
      */
     private run = () => {
         // stop run look if game becomes paused
-        if (this.inputController.Input.Escape) {
-            if (this.isRunning) {
-                this.pause();
-            } else {
-                this.play();
-            }
+        if (this.isGameOver && this.isRunning) {
+            console.log('stop the game');
+            StateManager.GetInstance().GoToGameOverModalAndPauseGame();
+            return;
         }
+
+        // if (this.inputController.Input.Escape) {
+        //     if (this.isRunning) {
+        //         StateManager.GetInstance().GoToPauseModalAndPauseGame();
+        //     } else {
+        //         StateManager.GetInstance().GoToGameAndResumeGame()
+        //     }
+        // }
         // handle all the queued events on the input controller
         this.tetrisGame.event_handler(this.inputController.getEventQueue());
         const boardMerged = this.tetrisGame.update(performance.now());
