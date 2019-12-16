@@ -117,9 +117,6 @@ impl Game {
                 break;
             }
         }
-        // update shadow piece position after piece is done moving
-        // TODO: move this to the update function. idk why its here
-        self.update_shadow_piece_position();
     }
 
     pub fn touch_event_handler(&mut self, target_x_pos: i32, target_y_pos: i32) {
@@ -144,6 +141,7 @@ impl Game {
         if self.game.is_paused() {
             return false;
         }
+        self.update_shadow_piece_position();
 
         self.game.update(elapsed_time);
         self.piece.update(elapsed_time);

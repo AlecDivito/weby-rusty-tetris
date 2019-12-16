@@ -127,10 +127,26 @@ class Tetris {
             this.mouseX = Math.round(this.mouseX / this.config.cellSize - offset);
             this.mouseY = Math.round(this.mouseY / this.config.cellSize);
         });
-        this.canvas.addEventListener('mouseover', event => console.log(event));
-        this.canvas.addEventListener('mouseenter', event => console.log(event));
-        this.canvas.addEventListener('mouseleave', event => console.log(event));
+        this.canvas.addEventListener('mouseenter', event => this.activateTouchEventHandling = true);
+        this.canvas.addEventListener('mouseleave', event => this.activateTouchEventHandling = false);
+
+        /**
+         * Initialize touch controls
+         * 
+         */
+        this.canvas.addEventListener("touchmove", (event) => {
+            this.mouseX = event.targetTouches[0].clientX - this.canvas.offsetLeft;
+            this.mouseY = event.targetTouches[0].clientY - this.canvas.offsetTop;
+
+            let offset = this.tetrisGame.get_piece_bounding_box() / 2;
+
+            this.mouseX = Math.round(this.mouseX / this.config.cellSize - offset);
+            this.mouseY = Math.round(this.mouseY / this.config.cellSize);
+        });
+        this.canvas.addEventListener('touchstart', event => this.activateTouchEventHandling = true);
+        this.canvas.addEventListener('touchend', event => this.activateTouchEventHandling = false);
     }
+    private activateTouchEventHandling: boolean = false;
     private mouseX = 0;
     private mouseY = 0;
 
@@ -190,8 +206,10 @@ class Tetris {
         //     }
         // }
         // handle all the queued events on the input controller
+        if (this.activateTouchEventHandling) {
+            this.tetrisGame.touch_event_handler(this.mouseX, this.mouseY);
+        }
         this.tetrisGame.event_handler(this.inputController.getEventQueue());
-        this.tetrisGame.touch_event_handler(this.mouseX, this.mouseY);
         const boardMerged = this.tetrisGame.update(performance.now());
         this.drawGrid();
         this.drawCells();
