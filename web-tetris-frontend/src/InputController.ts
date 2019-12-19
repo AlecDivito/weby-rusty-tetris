@@ -3,7 +3,13 @@ import { Action } from "../../tetris-logic/pkg/rusty_web_tetris";
 export default class InputController {
 
     private listening: boolean;
+    private canvasElement: HTMLCanvasElement;
+    private holdPieceCanvas: HTMLCanvasElement;
+
     private input: { [key: string]: boolean } = {
+        /**
+         * Keyboard input
+         */
         ShiftLeft: false,
         ControlLeft: false,
         Escape: false,
@@ -26,7 +32,39 @@ export default class InputController {
         Numpad8: false,
         Numpad9: false,
         F1: false,
+
+        /**
+         * mouse input
+         */
+        leftClick: false,
+        leftClickHold: false,
+        rightClick: false,
+        rightClickHold: false,
+        middleClick: false,
+        middleClickHold: false,
+
+        /**
+         * touch input
+         */
+        dragDown: false,
+        holdDown: false,
+        tapHold: false,
+        tapLeft: false,
+        tapRight: false,
     };
+
+    private mouseInput = {
+        x: 0,
+        y: 0,
+        updated: false,
+    }
+
+    private touchInput = {
+        x: 0,
+        y: 0,
+        touchStartTime: 0,
+        updated: false
+    }
 
     get Input() {
         return this.input;
@@ -60,8 +98,10 @@ export default class InputController {
     /**
      * Create a Input controller
      */
-    constructor() {
+    constructor(canvasBoard: HTMLCanvasElement, holdPieceCanvas: HTMLCanvasElement) {
         this.listening = false;
+        this.canvasElement = canvasBoard;
+        this.holdPieceCanvas = holdPieceCanvas;
     }
 
     /**
@@ -74,6 +114,52 @@ export default class InputController {
         }
         window.addEventListener("keyup", this.keyboardEvent);
         window.addEventListener("keydown", this.keyboardEvent);
+
+        /**
+         * Mouse Controls
+         */
+        const update = (event: MouseEvent | TouchEvent) => {
+            if (event instanceof MouseEvent) {
+                this.mouseInput.x = event.clientX - this.canvasElement.offsetLeft;
+                this.mouseInput.y = event.clientY - this.canvasElement.offsetTop;
+            }
+            if (event instanceof TouchEvent) {
+                this.mouseInput.x = event.targetTouches[0].clientX - this.canvasElement.offsetLeft;
+                this.mouseInput.y = event.targetTouches[0].clientY - this.canvasElement.offsetTop;
+            }
+            this.mouseInput.updated = true;
+        }
+        this.canvasElement.addEventListener("mousemove", update);
+        this.canvasElement.addEventListener("mouseenter", update);
+        this.canvasElement.addEventListener('mouseleave', update);
+        this.canvasElement.addEventListener('contextmenu', event => event.preventDefault());
+        this.canvasElement.addEventListener('mousedown', event => {
+            this.input.leftClick = [1, 3, 5, 7].includes(event.buttons);
+            this.input.rightClick = [2, 3, 6, 7].includes(event.buttons);
+            this.input.middleClick = [4, 5, 6, 7].includes(event.buttons);
+        });
+        this.canvasElement.addEventListener('mouseup', event => {
+            this.input.leftClick = [1, 3, 5, 7].includes(event.buttons);
+            this.input.rightClick = [2, 3, 6, 7].includes(event.buttons);
+            this.input.middleClick = [4, 5, 6, 7].includes(event.buttons);
+        });
+
+        /**
+         * Touch Controls
+         */
+
+        const updateTouch = (event: TouchEvent) => {
+            this.touchInput.x = event.targetTouches[0].clientX - this.canvasElement.offsetLeft;
+            this.touchInput.y = event.targetTouches[0].clientY - this.canvasElement.offsetTop;
+            this.touchInput.updated;
+            console.log(event);
+        }
+
+        this.canvasElement.addEventListener('touchmove', updateTouch);
+        this.canvasElement.addEventListener('touchstart', updateTouch);
+        this.canvasElement.addEventListener('touchend', updateTouch);
+        this.holdPieceCanvas.addEventListener('click', event => this.input.tapHold = true);
+
         this.listening = true;
     }
 
@@ -94,16 +180,16 @@ export default class InputController {
     public getEventQueue(): Uint8Array /*Action[]*/ {
         const i = this.input;
         const eventQueue: Action[] = [];
-        if (i.Numpad1 || i.Numpad5 || i.Numpad9 || i.KeyX || i.ArrowUp) {
+        if (i.Numpad1 || i.Numpad5 || i.Numpad9 || i.KeyX || i.ArrowUp || i.tapRight) {
             eventQueue.push(Action.RotateClockWise);
         }
-        if (i.Numpad3 || i.Numpad7 || i.ControlLeft || i.KeyZ) {
+        if (i.Numpad3 || i.Numpad7 || i.ControlLeft || i.KeyZ || i.tapLeft) {
             eventQueue.push(Action.RotateCounterClockWise);
         }
-        if (i.Numpad8 || i.Space) {
+        if (i.Numpad8 || i.Space || i.leftClick || i.dragDown) {
             eventQueue.push(Action.HardDrop);
         }
-        if (i.Numpad0 || i.KeyC || i.ShiftLeft) {
+        if (i.Numpad0 || i.KeyC || i.ShiftLeft || i.rightClick || i.tapHold) {
             eventQueue.push(Action.HoldPiece);
         }
         if (i.Numpad4 || i.ArrowLeft) {
@@ -112,7 +198,7 @@ export default class InputController {
         if (i.Numpad6 || i.ArrowRight) {
             eventQueue.push(Action.MoveRight);
         }
-        if (i.Numpad2 || i.ArrowDown) {
+        if (i.Numpad2 || i.ArrowDown || i.holdDown) {
             eventQueue.push(Action.SoftDrop);
         }
         if (i.Escape) {
@@ -134,6 +220,23 @@ export default class InputController {
             }
         }
         return byteEventQueue;
+    }
+
+    public getTouchGridArea(cellSize: number, boundingBox: number): {x: number, y: number} | null {
+        let offset = boundingBox / 2;
+        if (this.mouseInput.updated) {
+            this.mouseInput.x = Math.round(this.mouseInput.x / cellSize - offset);
+            this.mouseInput.y = Math.round(this.mouseInput.y / cellSize - offset);
+            this.mouseInput.updated = false;
+            return this.mouseInput;
+        }
+        if (this.touchInput.updated) {
+            this.touchInput.x = Math.round(this.touchInput.x / cellSize - offset);
+            this.touchInput.y = Math.round(this.touchInput.y / cellSize - offset);
+            this.touchInput.updated = false;
+            return this.touchInput;
+        }
+        return null; 
     }
 
     /**

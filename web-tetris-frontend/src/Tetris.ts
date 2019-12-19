@@ -95,8 +95,6 @@ class Tetris {
         this.config = config;
         this.canvas.height = (this.config.cellSize + 1) * this.height + 1;
         this.canvas.width = (this.config.cellSize + 1) * this.width + 1;
-        this.inputController = new InputController();
-        this.inputController.start();
 
         /**
          * Initialize preview canvas
@@ -115,40 +113,12 @@ class Tetris {
         holdPiece.width = this.config.previewCellSize * 4;
 
         /**
-         * Initialize mouse controls
+         * Initialize Input Controls
          * 
          */
-        this.canvas.addEventListener("mousemove", (event) => {
-            this.mouseX = event.clientX - this.canvas.offsetLeft;
-            this.mouseY = event.clientY - this.canvas.offsetTop;
-
-            let offset = this.tetrisGame.get_piece_bounding_box() / 2;
-
-            this.mouseX = Math.round(this.mouseX / this.config.cellSize - offset);
-            this.mouseY = Math.round(this.mouseY / this.config.cellSize);
-        });
-        this.canvas.addEventListener('mouseenter', event => this.activateTouchEventHandling = true);
-        this.canvas.addEventListener('mouseleave', event => this.activateTouchEventHandling = false);
-
-        /**
-         * Initialize touch controls
-         * 
-         */
-        this.canvas.addEventListener("touchmove", (event) => {
-            this.mouseX = event.targetTouches[0].clientX - this.canvas.offsetLeft;
-            this.mouseY = event.targetTouches[0].clientY - this.canvas.offsetTop;
-
-            let offset = this.tetrisGame.get_piece_bounding_box() / 2;
-
-            this.mouseX = Math.round(this.mouseX / this.config.cellSize - offset);
-            this.mouseY = Math.round(this.mouseY / this.config.cellSize);
-        });
-        this.canvas.addEventListener('touchstart', event => this.activateTouchEventHandling = true);
-        this.canvas.addEventListener('touchend', event => this.activateTouchEventHandling = false);
+        this.inputController = new InputController(this.canvas, holdPiece);
+        this.inputController.start();
     }
-    private activateTouchEventHandling: boolean = false;
-    private mouseX = 0;
-    private mouseY = 0;
 
     /***************************************************************************
      * GAME LOGIC
@@ -206,8 +176,9 @@ class Tetris {
         //     }
         // }
         // handle all the queued events on the input controller
-        if (this.activateTouchEventHandling) {
-            this.tetrisGame.touch_event_handler(this.mouseX, this.mouseY);
+        const touchControls = this.inputController.getTouchGridArea(this.config.cellSize, this.tetrisGame.get_piece_bounding_box());
+        if (touchControls) {
+            this.tetrisGame.touch_event_handler(touchControls.x, touchControls.y);
         }
         this.tetrisGame.event_handler(this.inputController.getEventQueue());
         const boardMerged = this.tetrisGame.update(performance.now());
