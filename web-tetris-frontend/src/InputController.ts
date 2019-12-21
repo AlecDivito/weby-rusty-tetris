@@ -60,11 +60,16 @@ export default class InputController {
     }
 
     private touchInput = {
+        startX: 0,
+        startY: 0,
         x: 0,
         y: 0,
+        timeStamp: 0,
         touchStartTime: 0,
         updated: false
     }
+
+    private touchEventFirst: boolean = false;
 
     get Input() {
         return this.input;
@@ -118,15 +123,9 @@ export default class InputController {
         /**
          * Mouse Controls
          */
-        const update = (event: MouseEvent | TouchEvent) => {
-            if (event instanceof MouseEvent) {
-                this.mouseInput.x = event.clientX - this.canvasElement.offsetLeft;
-                this.mouseInput.y = event.clientY - this.canvasElement.offsetTop;
-            }
-            if (event instanceof TouchEvent) {
-                this.mouseInput.x = event.targetTouches[0].clientX - this.canvasElement.offsetLeft;
-                this.mouseInput.y = event.targetTouches[0].clientY - this.canvasElement.offsetTop;
-            }
+        const update = (event: MouseEvent) => {
+            this.mouseInput.x = event.clientX - this.canvasElement.offsetLeft;
+            this.mouseInput.y = event.clientY - this.canvasElement.offsetTop;
             this.mouseInput.updated = true;
         }
         this.canvasElement.addEventListener("mousemove", update);
@@ -149,16 +148,76 @@ export default class InputController {
          */
 
         const updateTouch = (event: TouchEvent) => {
-            this.touchInput.x = event.targetTouches[0].clientX - this.canvasElement.offsetLeft;
-            this.touchInput.y = event.targetTouches[0].clientY - this.canvasElement.offsetTop;
-            this.touchInput.updated;
-            console.log(event);
+            this.touchEventFirst = true;
+            if (event.type === 'touchend') {
+                const x = event.changedTouches[0].clientX - this.canvasElement.offsetLeft;
+                const y = event.changedTouches[0].clientY - this.canvasElement.offsetTop;
+
+                this.touchInput.x = x;
+                this.touchInput.y = y;
+
+                const diff_x = Math.floor(this.touchInput.startX - x);
+                const diff_y = Math.floor(this.touchInput.startY - y);
+                const timeDiff = event.timeStamp - this.touchInput.touchStartTime;
+                const threshold = 160; // 5 frames
+                const isTap = diff_x >= -1 && diff_x <= 1 && diff_y >= -1 && diff_y <= 1;
+                console.log(timeDiff, diff_x, diff_y, this.touchInput.startX, x);
+                if (timeDiff < threshold && isTap) {
+                    const width_offset = this.canvasElement.width / 2;
+                    if (x < width_offset) {
+                        this.input.tapLeft = true;
+                    } else {
+                        this.input.tapRight = true;
+                    }
+                }
+                return false;
+            }
+            
+            const x = event.targetTouches[0].clientX - this.canvasElement.offsetLeft;
+            const y = event.targetTouches[0].clientY - this.canvasElement.offsetTop;
+            if (event.type === 'touchstart') {
+                this.touchInput.x = x;
+                this.touchInput.y = y;
+                this.touchInput.timeStamp = event.timeStamp;
+
+                this.touchInput.startX = x;
+                this.touchInput.startY = y;
+                this.touchInput.touchStartTime = event.timeStamp;
+                return false;
+            }
+            const diff_x = this.touchInput.x - x;
+            const diff_y = this.touchInput.y - y;
+
+            const abs_x = Math.abs(diff_x);
+            const abs_y = Math.abs(diff_y);
+
+            const time = event.timeStamp - this.touchInput.timeStamp;
+            const velocity = Math.sqrt(abs_x * abs_x + abs_y * abs_y) / time;
+
+            const flick_threshold = .8;
+            const isFlick = velocity > flick_threshold;
+
+            const rad = Math.atan2(y - this.touchInput.y, x - this.touchInput.x);
+            const degree = Math.abs(rad) * 180 / Math.PI;
+
+            if (degree > 80 && degree < 100 && isFlick) {
+                // swipe down
+                this.input.dragDown = true;
+            } else if ((degree >= -45 && degree <= 45) || (degree < 225 && degree > 135)) {
+                // move left and right
+                this.touchInput.updated = true;
+                this.touchInput.x = x;
+                this.touchInput.y = y;
+                this.touchInput.timeStamp = event.timeStamp;
+                this.input.dragDown = false;
+            }
+            return false;
         }
 
-        this.canvasElement.addEventListener('touchmove', updateTouch);
-        this.canvasElement.addEventListener('touchstart', updateTouch);
-        this.canvasElement.addEventListener('touchend', updateTouch);
-        this.holdPieceCanvas.addEventListener('click', event => this.input.tapHold = true);
+        this.canvasElement.addEventListener('touchmove', updateTouch, { passive: true });
+        this.canvasElement.addEventListener('touchstart', updateTouch, { passive: true });
+        this.canvasElement.addEventListener('touchend', updateTouch, { passive: true});
+        this.holdPieceCanvas.addEventListener('click', () => this.input.tapHold = true);
 
         this.listening = true;
     }
@@ -219,22 +278,31 @@ export default class InputController {
                 case Action.ToggleRunning: byteEventQueue[j] = 7; break;
             }
         }
+        // toggle all touch events 
+        this.input.dragDown = false
+        this.input.holdDown = false;
+        this.input.tapHold = false;
+        this.input.tapLeft = false;
+        this.input.tapRight = false;
         return byteEventQueue;
     }
 
     public getTouchGridArea(cellSize: number, boundingBox: number): {x: number, y: number} | null {
         let offset = boundingBox / 2;
-        if (this.mouseInput.updated) {
-            this.mouseInput.x = Math.round(this.mouseInput.x / cellSize - offset);
-            this.mouseInput.y = Math.round(this.mouseInput.y / cellSize - offset);
+        if (this.mouseInput.updated && this.touchEventFirst === false) {
+            let x = this.mouseInput.x,
+                y = this.mouseInput.y;
+            x = Math.round(x / cellSize - offset);
+            y = Math.round(y / cellSize - offset);
             this.mouseInput.updated = false;
-            return this.mouseInput;
+            return { x, y };
         }
         if (this.touchInput.updated) {
-            this.touchInput.x = Math.round(this.touchInput.x / cellSize - offset);
-            this.touchInput.y = Math.round(this.touchInput.y / cellSize - offset);
+            let x = this.touchInput.x, y = this.touchInput.y;
+            x = Math.round(x / cellSize - offset);
+            y = Math.round(y / cellSize - offset);
             this.touchInput.updated = false;
-            return this.touchInput;
+            return {x,y};
         }
         return null; 
     }
