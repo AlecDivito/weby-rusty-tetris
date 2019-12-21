@@ -1,0 +1,14 @@
+.card {
+    padding: $card-padding;
+    background-color: $card-background-color;
+    border-radius: $card-border-radius;
+
+    &__title {
+        margin: $card-title-margin;
+        text-align: center;
+    }
+
+    &__content {
+        margin: $card-content-margin;
+    }
+}

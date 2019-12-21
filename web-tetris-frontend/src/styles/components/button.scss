@@ -1,0 +1,25 @@
+button {
+	position: relative;
+    cursor: pointer;
+    border: none;
+    outline: none;
+
+    top: $button-position-top-normal;
+    background: $button-background-color;
+    color: $button-color;
+    padding: $button-padding;
+
+    border-radius: $button-border-radius;
+    box-shadow: $button-box-shadow-normal;
+    transition: $button-transition;
+}
+
+button:hover {
+	box-shadow: $button-box-shadow-hover;
+    top: $button-position-top-hover;
+}
+
+button:active {
+	box-shadow: $button-box-shadow-active;
+    top: $button-position-top-active;
+}

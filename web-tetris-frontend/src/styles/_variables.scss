@@ -1,0 +1,37 @@
+// Colors
+$white: #fff;
+
+// extra
+$border-radius: 0.5rem;
+$padding: 1rem;
+$margin: 1rem;
+
+/*******************************************************************************
+ * Pages
+ ******************************************************************************/
+$pause-list-margin-bottom: $margin;
+
+/*******************************************************************************
+ * Components
+ ******************************************************************************/
+// Card
+$card-padding: $padding;
+$card-background-color: $white;
+$card-border-radius: $border-radius;
+
+$card-title-margin: $margin 0rem;
+$card-content-margin: 0rem 0rem $margin 0rem;
+
+// Button
+$button-color: $white;
+$button-background-color: #cb4e4e;
+$button-padding: $padding;
+$button-border-radius: $border-radius;
+
+$button-transition: box-shadow .1s ease-in, top .1s ease-in;
+$button-position-top-normal: 0px;
+$button-position-top-hover: 2px;
+$button-position-top-active: 6px;
+$button-box-shadow-normal: 0 #{6px - $button-position-top-normal} #ab3c3c;
+$button-box-shadow-hover:  0 #{6px - $button-position-top-hover} #ab3c3c;
+$button-box-shadow-active: 0 #{6px - $button-position-top-active} #ab3c3c;

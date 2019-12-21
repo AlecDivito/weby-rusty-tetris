@@ -1,5 +1,11 @@
-import { Tetris } from "../../tetris-logic/pkg/rusty_web_tetris";
-import Game from "./Game";
 
-const t = new Game(Tetris.new());
-t.startGame();
+import StateManager from './StateManager';
+
+try {
+    console.log('hello');
+    StateManager.GetInstance().GoToMainMenu();
+}
+catch (error) {
+    console.error(error);
+    console.error("Stop The Game Please!");
+}

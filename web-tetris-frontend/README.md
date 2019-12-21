@@ -1,3 +1,23 @@
+# Tetris Clone
+
+A clone of the popular game tetris, UI is built with javascript canvas 2D while
+all the logic is implemented with rust library (rust to wasm)
+
+# Information
+
+Project was created using 
+
+# License
+Licensed under MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+
+
+# Contribution
+If you come by this project and want to contribute just post an issue, explaining
+what feature you would like to add or bug you ran into.
+
+
+
+
 # `create-wasm-app`
 
 > An `npm init` template for kick starting a project that uses NPM packages
@@ -33,19 +53,3 @@ npm init wasm-app
       - [`webpack-dev-server`](https://www.npmjs.com/package/webpack-dev-server)
   - defines a `start` script to run `webpack-dev-server`
 - `webpack.config.js`: configuration file for bundling your js with webpack
-
-## License
-
-Licensed under either of
-
-* Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
-* MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
-
-at your option.
-
-### Contribution
-
-Unless you explicitly state otherwise, any contribution intentionally
-submitted for inclusion in the work by you, as defined in the Apache-2.0
-license, shall be dual licensed as above, without any additional terms or
-conditions.

@@ -1,68 +1,107 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <style>
-      body {
-        padding: 0;
-        margin: 0;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background-color: #333;
-      }
-      #tetris {
-        box-shadow: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
-      }
-      .container {
-        display: grid;
-        grid-template-columns: 150px auto 150px;
-        grid-template-rows: auto;
-        grid-template-areas: "sidebar main rightbar";
-        grid-column-gap: 2rem;
-      }
-      .container__item {
-        width: 100%;
-      }
-      .item--left {
-        grid-area: sidebar;
-      }
-      .item--main {
-        grid-area: main
-      }
-      .item--right {
-        grid-area: rightbar;
-      }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="utf-8">
-    <title>Hello wasm-pack!</title>
+    <link rel="stylesheet" href="./bootstrap.css">
+    <title>Tetris With Wasm</title>
   </head>
   <body>
-    <div class="container">
-
-      <div class="container__item item--left">
-        <canvas id="hold_piece"></canvas>
-        <h3>Score: <span id="score">0</span></h3>
-        <h3>level: <span id="level">0</span></h3>
-        <h3>Rows:  <span id="rows_completed">0</span></h3>
+    <!-- Main Menu page
+      Ability to access:
+        - (required) Game Page
+        - (optional) Quick Game Mode (just go start a game)
+        - (optional) Select Game Mode Page
+        - (optional) Controls Page 
+        - (optional) Stats? idk
+    -->
+    <div id="main-menu-page" class="main-menu">
+      <h1 class="main-menu__title">Tetris</h1>
+      <button id="main-menu-play">Play Game</button>
+    </div>
+    
+    <!-- Game page
+      Ability to:
+        - (required) Pause Game (Modal)
+        - (required) Lose Game  (Modal)
+      Must Show:
+        - (required) Holding Piece
+        - (required) Next Pieces
+        - (required) Level
+        - (required) Goal (number of pieces to match to get to next level)
+        - (required) Score
+        - (required) Pause Button
+        - (optional) coins -- this can be done later
+      Examples:
+        https://www.emmawang.me/ui?lightbox=dataItem-j0idzdxn
+        https://www.pinterest.ca/fduy96/tetris-ui/
+        http://www.douvilleart.com/new-page-81
+    -->
+    <div id="game-page" class="game">
+      <div class="game__bar">
+        top
       </div>
-      <div class="container__item item--main">
-        <canvas id="tetris"></canvas>
+      <div class="game__bar">
+        Top Bottom
       </div>
-      <div class="container__item item--right">
-        <canvas class="preview"></canvas>
-        <canvas class="preview"></canvas>
-        <canvas class="preview"></canvas>
-        <canvas class="preview"></canvas>
-        <canvas class="preview"></canvas>
-        <canvas class="preview"></canvas>
+      <div class="game__board">
+        <div id="game__board__item--left" class="game__board__item game__board__item--left">
+          <canvas id="hold_piece"></canvas>
+          <h3>Score: <span id="score">0</span></h3>
+          <h3>level: <span id="level">0</span></h3>
+          <h3>Rows:  <span id="rows_completed">0</span></h3>
+          <button id="game-pause">⏸</button>
+        </div>
+        <div id="game__board__item--main" class="game__board__item game__board__item--main">
+          <canvas id="tetris"></canvas>
+        </div>
+        <div id="game__board__item--right" class="game__board__item game__board__item--right">
+          <canvas id="preview"></canvas>
+        </div>
       </div>
     </div>
+
+    <!-- Pause Modal
+      Required:
+        - Title (Game Pause)
+        - Control Music Slider
+        - Control Sound Slider
+        - Restart Game
+        - Close Model
+      Examples:
+        https://www.pinterest.co.uk/pin/838443655599579811/
+    -->
+    <div id="pause-game-modal" class="modal card pause">
+      <h1 class="card__title">Pause Game</h1>
+      <div class="card__content pause__list">
+        <button id="pause-game-resume">Resume</button>
+        <button id="pause-game-restart">Restart</button>
+        <button id="pause-game-control">Controls</button>
+        <button id="pause-game-setting">Settings</button>
+        <button id="pause-game-exit">Exit Game</button>
+      </div>
+    </div>
+
+    <!-- Game Over Modal
+      Required:
+        - Score Board
+          - Name + Number
+        - Play Again
+        - Share High Score
+        - Go To Main Menu
+      Examples:
+        https://dribbble.com/shots/1216488-Tetris-Game-Over
+    -->
+    <div id="game-over-modal" class="modal card game-over">
+      <h1 class="card__title">Game Over</h1>
+      <div class="card__content">
+        <h3 class="card__content__title">High Scores</h3>
+        <ul class="card__list"></ul>
+      </div>
+      <button id="game-over-exit">🏠</button>
+      <button id="game-over-restart">↺</button>
+    </div>
+
     <script src="./bootstrap.js"></script>
   </body>
 </html>
