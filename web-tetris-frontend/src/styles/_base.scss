@@ -1,4 +1,12 @@
+
+html {
+    background: $background;
+    font-family: $font;
+    text-transform: $text-transform;
+}
+
 body {
+    background: $background;
     overflow: hidden;
     overscroll-behavior: none;
     padding: 0;
@@ -16,7 +24,5 @@ body {
 }
 
 @media (prefers-color-scheme: dark) {
-    body {
-        background-color: #333;
-    }
+
 }

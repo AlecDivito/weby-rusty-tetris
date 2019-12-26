@@ -11,8 +11,15 @@ import { Game } from "../../tetris-logic/pkg/rusty_web_tetris";
  */
 export default class StateManager {
 
+    public static GetInstance = (): StateManager => {
+        if (StateManager.instance === undefined) {
+            StateManager.instance = new StateManager();
+        }
+        return StateManager.instance!;
+    }
+
     private static instance?: StateManager;
-    
+
     private mainMenu: MainMenuPage;
     private gamePage: GamePage;
     private pauseModal: PauseModal;
@@ -27,16 +34,8 @@ export default class StateManager {
         this.gameOverModal = new GameOverModal();
         this.game = undefined;
     }
-    
-    public static GetInstance = (): StateManager => {
-        if (StateManager.instance === undefined) {
-            StateManager.instance = new StateManager();
-        }
-        return StateManager.instance!;
-    }
 
-    GoToMainMenu() {
-        console.log('going to main')
+    public GoToMainMenu() {
         this.mainMenu.show();
         this.gamePage.hide();
         this.pauseModal.hide();
@@ -47,58 +46,37 @@ export default class StateManager {
         this.game = undefined;
     }
 
-    private GoToGame() {
-        this.mainMenu.hide();
-        this.gamePage.show();
-        this.pauseModal.hide();
-        this.gameOverModal.hide();
-    }
-
-    GoToGameAndRestartGame() {
+    public GoToGameAndRestartGame() {
         this.GoToGame();
         this.game = new Tetris(Game.new(), this.gamePage.CalculateTetrisConfig());
         this.game.startTetris();
     }
 
-    GoToGameAndStartGame() {
+    public GoToGameAndStartGame() {
         this.GoToGame();
         this.game = new Tetris(Game.new(), this.gamePage.CalculateTetrisConfig());
         this.game.startTetris();
     }
 
-    GoToGameAndResumeGame() {
+    public GoToGameAndResumeGame() {
         this.GoToGame();
         if (!this.game) {
-            throw new Error('[GoToGameAndResumeGame]: Game MUST exist for the game to be resumed');
+            throw new Error("[GoToGameAndResumeGame]: Game MUST exist for the game to be resumed");
         } else {
             this.game.play();
         }
     }
 
-    private GoToPauseGameModal() {
-        this.mainMenu.hide();
-        this.gamePage.show();
-        this.pauseModal.show();
-        this.gameOverModal.hide();
-    }
-
-    GoToPauseModalAndPauseGame() {
+    public GoToPauseModalAndPauseGame() {
         this.GoToPauseGameModal();
         if (!this.game) {
-            throw new Error('[GoToPauseModalAndPauseGame]: Game MUST exist for the game to be paused');
+            throw new Error("[GoToPauseModalAndPauseGame]: Game MUST exist for the game to be paused");
         } else {
             this.game.pause();
         }
     }
 
-    private GoToGameOverModal() {
-        this.mainMenu.hide();
-        this.gamePage.show();
-        this.pauseModal.hide();
-        this.gameOverModal.show();
-    }
-
-    GoToGameOverModalAndPauseGame() {
+    public GoToGameOverModalAndPauseGame() {
         if (!this.game) {
             console.log(this.game);
             throw new Error("Tetris game must be running if 'GoToGameOverModal()' is called!");
@@ -111,4 +89,34 @@ export default class StateManager {
         this.game.pause();
         this.GoToGameOverModal();
     }
+
+    public GoToStatisticsPage() {
+        throw new Error("Method not implemented.");
+    }
+
+    public GoToCustomizePage() {
+        throw new Error("Method not implemented.");
+    }
+
+    private GoToGame() {
+        this.mainMenu.hide();
+        this.gamePage.show();
+        this.pauseModal.hide();
+        this.gameOverModal.hide();
+    }
+
+    private GoToPauseGameModal() {
+        this.mainMenu.hide();
+        this.gamePage.show();
+        this.pauseModal.show();
+        this.gameOverModal.hide();
+    }
+
+    private GoToGameOverModal() {
+        this.mainMenu.hide();
+        this.gamePage.show();
+        this.pauseModal.hide();
+        this.gameOverModal.show();
+    }
+
 }

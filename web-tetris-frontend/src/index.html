@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="./bootstrap.css">
     <title>Tetris With Wasm</title>
   </head>
-  <body >
+  <body>
     <!-- Main Menu page
       Ability to access:
         - (required) Game Page
@@ -18,8 +18,10 @@
     <div id="main-menu-page">
       <div class="main-menu">
         <h1 class="main-menu__title">Tetris</h1>
-        <button id="main-menu-play">Play Game</button>
-        <button id="main-menu-dark-mode">Enable Dark Mode</button>
+        <canvas class="main-menu__canvas"></canvas>
+        <button id="main-menu-play">New Game</button>
+        <button id="main-menu-custom">Customize</button>
+        <button id="main-menu-stats">Statistics</button>
       </div>
     </div>
     

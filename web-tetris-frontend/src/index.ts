@@ -1,4 +1,3 @@
-
 import StateManager from './StateManager';
 
 try {

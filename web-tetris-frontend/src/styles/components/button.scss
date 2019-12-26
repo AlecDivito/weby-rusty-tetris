@@ -1,4 +1,7 @@
 button {
+    font-family: $font;
+    text-transform: $text-transform;
+
 	position: relative;
     cursor: pointer;
     border: none;

@@ -5,29 +5,28 @@ import { GetElementById } from "../util";
 export default class MainMenuPage extends Page {
 
     private playBtn: HTMLButtonElement;
-    private darkModeBtn: HTMLButtonElement;
+    private customizeBtn: HTMLButtonElement;
+    private statisticsBtn: HTMLButtonElement;
 
     constructor() {
         super("main-menu-page");
-        this.playBtn = GetElementById('main-menu-play') as HTMLButtonElement;
-        this.darkModeBtn = GetElementById('main-menu-dark-mode') as HTMLButtonElement;
-        this.playBtn.addEventListener('click', this.playGame);
-        this.darkModeBtn.addEventListener('click', this.darkMode);
-        this.darkMode();
+        this.playBtn = GetElementById("main-menu-play") as HTMLButtonElement;
+        this.playBtn.addEventListener("click", this.playGame);
+        this.customizeBtn = GetElementById("main-menu-custom") as HTMLButtonElement;
+        this.customizeBtn.addEventListener("click", this.customize);
+        this.statisticsBtn = GetElementById("main-menu-stats") as HTMLButtonElement;
+        this.statisticsBtn.addEventListener("click", this.statistics);
     }
 
-    playGame = () => {
+    private playGame = () => {
         StateManager.GetInstance().GoToGameAndStartGame();
     }
 
-    darkMode = () => {
-        const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
-        if (!currentTheme || currentTheme !== 'dark') {
-            document.documentElement.setAttribute('data-theme', 'dark');
-            localStorage.setItem('theme', 'dark'); //add this
-        } else {
-            document.documentElement.setAttribute('data-theme', 'light');
-            localStorage.setItem('theme', 'light'); //add this
-        } 
+    private customize = () => {
+        StateManager.GetInstance().GoToCustomizePage();
+    }
+
+    private statistics = () => {
+        StateManager.GetInstance().GoToStatisticsPage();
     }
 }
