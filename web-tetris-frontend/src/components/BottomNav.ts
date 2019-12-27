@@ -45,11 +45,18 @@ const RegisterBottomNav = () => {
 
         private toggleFullScreen = () => {
             console.log('toggle full screen');
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
         }
 
         private goToSettings = () => {
             console.log('go to settings');
-            StateManager.GetInstance().ClearAndPush(new SettingsPage());
+            StateManager.GetInstance().Push(new SettingsPage());
         }
     }
     window.customElements.define("bottom-nav", BottomNav);

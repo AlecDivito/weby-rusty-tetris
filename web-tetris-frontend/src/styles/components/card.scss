@@ -2,10 +2,30 @@
     padding: $card-padding;
     background-color: $card-background-color;
     border-radius: $card-border-radius;
+    position: absolute;
+    top: 50%; 
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    width: 65%;
+
+    &__header {
+        position: absolute;
+        width: 100%;
+        margin: auto;
+        top: -47px;
+        left: 0;
+        right: 0;
+        background-color: rgba(0,0,0,0.0);
+    }
 
     &__title {
-        margin: $card-title-margin;
-        text-align: center;
+        padding: 1.5rem;
+        background-color: white;
+        border: 1px solid red;
+        border-radius: 2rem;
+        width: fit-content;
+        margin: auto;
     }
 
     &__content {

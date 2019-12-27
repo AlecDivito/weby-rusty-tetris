@@ -41,9 +41,7 @@ export default class StateManager {
         page.destroy();
         if (this.stack.length > 0) {
             const newPage = this.stack[this.stack.length - 1];
-            if (!newPage.isShowing()) {
-                newPage.show();
-            }
+            newPage.show();
         }
     }
 

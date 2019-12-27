@@ -19,12 +19,12 @@ $pause-list-margin-bottom: $margin;
  * Components
  ******************************************************************************/
 // Card
-$card-padding: $padding;
+$card-padding: $padding $padding 0.5rem $padding;
 $card-background-color: $white;
 $card-border-radius: $border-radius;
 
 $card-title-margin: $margin 0rem;
-$card-content-margin: 0rem 0rem $margin 0rem;
+$card-content-margin: #{$margin * 2} 0rem 0rem 0rem;
 
 // Button
 $button-color: $white;

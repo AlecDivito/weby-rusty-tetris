@@ -17,6 +17,9 @@ game-btn, .btn, button {
     border-radius: $button-border-radius;
     box-shadow: $button-box-shadow-normal;
     transition: $button-transition;
+
+    font-size: 2rem;
+    margin-bottom: 1rem;
 }
 
 game-btn:hover, .btn:hover, button:hover {
