@@ -18,10 +18,22 @@
     <div id="main-menu-page">
       <div class="main-menu">
         <h1 class="main-menu__title">Tetris</h1>
-        <canvas class="main-menu__canvas"></canvas>
-        <button id="main-menu-play">New Game</button>
-        <button id="main-menu-custom">Customize</button>
-        <button id="main-menu-stats">Statistics</button>
+        <canvas id="main-menu-canvas" class="main-menu__canvas"></canvas>
+        <game-btn class="btn" id="main-menu-play">New Game</game-btn>
+        <game-btn class="btn" id="main-menu-custom">Customize</game-btn>
+        <game-btn class="btn" id="main-menu-stats">Statistics</game-btn>
+      </div>
+    </div>
+
+    <div id="customization-page">
+      <div class="custom">
+        <top-nav></top-nav>
+      </div>
+    </div>
+
+    <div id="statistics-page">
+      <div class="stats">
+        <top-nav></top-nav>
       </div>
     </div>
     
@@ -106,6 +118,25 @@
       <button id="game-over-exit">🏠</button>
       <button id="game-over-restart">↺</button>
     </div>
+
+    <!-- Game Button Template
+      Mimics button element, but just testing it out
+    -->
+    <template id="game-btn"></template>
+
+    <!-- Top Nav Template
+      setup listeners to listen for clicks
+    -->
+    <template id="top-nav">
+      <game-btn class="btn" id="main-menu-play">←</game-btn>
+      <h3>Tetris</h3>
+      <game-btn class="btn" id="main-menu-play">⌂</game-btn>
+    </template>
+
+    
+    <template id="bottom-nav">
+
+    </template>
 
     <script src="./bootstrap.js"></script>
   </body>

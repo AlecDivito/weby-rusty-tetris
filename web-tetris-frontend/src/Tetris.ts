@@ -2,6 +2,7 @@ import { Cell, Game, Action } from "../../tetris-logic/pkg/rusty_web_tetris";
 import { memory } from "../../tetris-logic/pkg/rusty_web_tetris_bg";
 import InputController from "./InputController";
 import StateManager from "./StateManager";
+import GameOverModal from "./pages/GameOverModal";
 
 const DEBUG_GAME = false;
 const CELL_PREVIEW_AMOUNT = 6;
@@ -90,8 +91,8 @@ class Tetris {
         this.width = game.get_width();
         this.totalHeight = game.get_height();
         this.boardHeight = this.totalHeight - game.get_offset_height();
-        this.canvas = document.getElementById('tetris') as HTMLCanvasElement;
-        this.ctx = this.canvas.getContext('2d')!;
+        this.canvas = document.getElementById("tetris") as HTMLCanvasElement;
+        this.ctx = this.canvas.getContext("2d")!;
         this.config = config;
         this.canvas.height = (this.config.cellSize + 1) * this.height + 1;
         this.canvas.width = (this.config.cellSize + 1) * this.width + 1;
@@ -100,7 +101,7 @@ class Tetris {
          * Initialize preview canvas
          *
          */
-        const previewCanvas = document.getElementById('preview') as HTMLCanvasElement;
+        const previewCanvas = document.getElementById("preview") as HTMLCanvasElement;
         previewCanvas.height = this.config.previewCellSize * 4 * 6;
         previewCanvas.width = this.config.previewCellSize * 4;
 
@@ -108,7 +109,7 @@ class Tetris {
          * Initialize hold piece canvas
          *
          */
-        const holdPiece = document.getElementById('hold_piece') as HTMLCanvasElement;
+        const holdPiece = document.getElementById("hold_piece") as HTMLCanvasElement;
         holdPiece.height = this.config.previewCellSize * 4;
         holdPiece.width = this.config.previewCellSize * 4;
 
@@ -149,7 +150,7 @@ class Tetris {
      * Unpause the game
      * Throws error when game is already in play
      */
-    play() {
+    public play() {
         if (this.isPaused) {
             this.animationId = requestAnimationFrame(this.run);
         } else {
@@ -163,8 +164,8 @@ class Tetris {
     private run = () => {
         // stop run look if game becomes paused
         if (this.isGameOver && this.isRunning) {
-            console.log('stop the game');
-            StateManager.GetInstance().GoToGameOverModalAndPauseGame();
+            console.log("stop the game");
+            StateManager.GetInstance().Push(new GameOverModal(), false);
             return;
         }
 
@@ -186,15 +187,15 @@ class Tetris {
         this.drawCells();
         this.drawPiece();
         this.updateHoldPiece();
-        document.getElementById('score')!.textContent = `${this.tetrisGame.get_score()}`;
+        document.getElementById("score")!.textContent = `${this.tetrisGame.get_score()}`;
 
         // A piece was merged into the board
         if (boardMerged) {
             // update queued pieces view
             this.updateQueuedPieces();
-            document.getElementById('level')!.textContent = `${this.tetrisGame.get_level()}`;
+            document.getElementById("level")!.textContent = `${this.tetrisGame.get_level()}`;
             document.getElementById(
-                'rows_completed',
+                "rows_completed",
             )!.textContent = `${this.tetrisGame.get_rows_completed()}`;
         }
 
@@ -244,9 +245,9 @@ class Tetris {
             for (let col = 0; col < this.width; col++) {
                 const index = this.getIndex(row, col);
                 if (cells[index] === Cell.EMPTY && row < this.totalHeight - this.boardHeight) {
-                    this.ctx.fillStyle = '#132456';
+                    this.ctx.fillStyle = "#132456";
                 } else {
-                    this.ctx.fillStyle = this.getColor(cells[index]);
+                    this.ctx.fillStyle = getColor(cells[index]);
                 }
 
                 this.drawCell(row, col);
@@ -257,8 +258,8 @@ class Tetris {
             this.ctx.beginPath();
             for (let row = this.offsetHeight; row < this.totalHeight; row++) {
                 for (let col = 0; col < this.width; col++) {
-                    this.ctx.fillStyle = 'red';
-                    this.ctx.font = '14px Arial';
+                    this.ctx.fillStyle = "red";
+                    this.ctx.font = "14px Arial";
                     this.ctx.fillText(
                         `${this.getIndex(row, col)}`,
                         col * (this.config.cellSize + 1) + 1,
@@ -287,7 +288,7 @@ class Tetris {
                 const index = row * boundingBox + col;
 
                 if (cells[index] !== Cell.EMPTY) {
-                    this.ctx.fillStyle = this.getColor(cellType);
+                    this.ctx.fillStyle = getColor(cellType);
                     this.ctx.globalAlpha = 0.5;
                     this.drawCell(row + shadowPiecePosition.y, col + shadowPiecePosition.x);
                     this.ctx.globalAlpha = 1;
@@ -301,8 +302,8 @@ class Tetris {
      * Get and update preview canvas's with the next queued pieces
      */
     private updateQueuedPieces() {
-        const previewCanvas = document.getElementById('preview') as HTMLCanvasElement;
-        const context = previewCanvas.getContext('2d');
+        const previewCanvas = document.getElementById("preview") as HTMLCanvasElement;
+        const context = previewCanvas.getContext("2d");
         if (!context) {
             return;
         }
@@ -310,16 +311,16 @@ class Tetris {
         const queuedPieces = this.tetrisGame.get_queued_pieces();
         const cells = new Uint8Array(memory.buffer, queuedPieces, CELL_PREVIEW_AMOUNT);
 
-        let minX = 0;
+        const minX = 0;
         let minY = 0;
-        let maxX = this.config.previewCellSize * 4;
+        const maxX = this.config.previewCellSize * 4;
         let maxY = this.config.previewCellSize * 4;
 
         // draw in background
-        context.fillStyle = '#000000';
+        context.fillStyle = "#000000";
         context.fillRect(0, 0, maxX, maxY * cells.length);
 
-        cells.forEach(cell => {
+        cells.forEach((cell) => {
             // set the needed area to draw the cells on the preview canvas's
             let boundingBox = 3;
             if (cell === Cell.O) {
@@ -329,15 +330,15 @@ class Tetris {
             }
 
             // draw the cell
-            context.fillStyle = this.getColor(cell);
+            context.fillStyle = getColor(cell);
             const pieces = getCells(cell);
             for (let row = 0; row < boundingBox; row++) {
                 for (let col = 0; col < boundingBox; col++) {
                     const i = row * boundingBox + col;
                     if (pieces[i] !== Cell.EMPTY) {
-                        context.fillStyle = this.getColor(cell);
+                        context.fillStyle = getColor(cell);
                     } else {
-                        context.fillStyle = '#000000';
+                        context.fillStyle = "#000000";
                     }
                     context.fillRect(
                         minX + (col * (this.config.previewCellSize + 1) + 1),
@@ -356,12 +357,12 @@ class Tetris {
      * Color in the piece that is currently being held
      */
     private updateHoldPiece() {
-        const holdCanvas = document.getElementById('hold_piece') as HTMLCanvasElement;
+        const holdCanvas = document.getElementById("hold_piece") as HTMLCanvasElement;
         const holdCell = this.tetrisGame.get_hold_piece();
-        const context = holdCanvas.getContext('2d')!;
+        const context = holdCanvas.getContext("2d")!;
         // draw in background
         context.beginPath();
-        context.fillStyle = '#000000';
+        context.fillStyle = "#000000";
         context.fillRect(0, 0, 150, 150);
 
         let boundingBox = 3;
@@ -374,14 +375,14 @@ class Tetris {
         // piece
         const pieces = getCells(holdCell);
         context.beginPath();
-        context.fillStyle = this.getColor(holdCell);
+        context.fillStyle = getColor(holdCell);
         for (let row = 0; row < boundingBox; row++) {
             for (let col = 0; col < boundingBox; col++) {
                 const i = row * boundingBox + col;
                 if (pieces[i] !== Cell.EMPTY) {
-                    context.fillStyle = this.getColor(holdCell);
+                    context.fillStyle = getColor(holdCell);
                 } else {
-                    context.fillStyle = '#000000';
+                    context.fillStyle = "#000000";
                 }
                 context.fillRect(
                     col * (this.config.previewCellSize + 1) + 1,
@@ -417,32 +418,32 @@ class Tetris {
     private getIndex(row: number, col: number) {
         return row * this.width + col;
     }
+}
 
-    /**
-     * Given the type of cell that needs coloring, return a hex color
-     * @param cell type of cell
-     */
-    private getColor(cell: Cell): string {
-        switch (cell) {
-            case Cell.EMPTY:
-                return '#000'; // black
-            case Cell.I:
-                return '#00FFFF'; // cyan
-            case Cell.O:
-                return '#FFFF00'; // yellow
-            case Cell.T:
-                return '#800080'; // purple
-            case Cell.S:
-                return '#00FF00'; // green
-            case Cell.Z:
-                return '#FF0000'; // Red
-            case Cell.J:
-                return '#0000FF'; // Blue
-            case Cell.L:
-                return '#FFA500'; // Orange
-            default:
-                return '#FFFFFF'; // white
-        }
+/**
+ * Given the type of cell that needs coloring, return a hex color
+ * @param cell type of cell
+ */
+export function getColor(cell: Cell): string {
+    switch (cell) {
+        case Cell.EMPTY:
+            return "#000"; // black
+        case Cell.I:
+            return "#00FFFF"; // cyan
+        case Cell.O:
+            return "#FFFF00"; // yellow
+        case Cell.T:
+            return "#800080"; // purple
+        case Cell.S:
+            return "#00FF00"; // green
+        case Cell.Z:
+            return "#FF0000"; // Red
+        case Cell.J:
+            return "#0000FF"; // Blue
+        case Cell.L:
+            return "#FFA500"; // Orange
+        default:
+            return "#FFFFFF"; // white
     }
 }
 
@@ -450,7 +451,7 @@ class Tetris {
  * Get array that makes up the cell on the grid
  * @param cell type of cell
  */
-function getCells(cell: Cell) {
+export function getCells(cell: Cell) {
     switch (cell) {
         case Cell.O:
             return [Cell.O, Cell.O,

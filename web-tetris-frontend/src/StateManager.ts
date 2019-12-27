@@ -1,9 +1,4 @@
-import MainMenuPage from "./pages/MainMenuPage";
-import GamePage from "./pages/GamePage";
-import PauseModal from "./pages/PauseModal";
-import GameOverModal from "./pages/GameOverModal";
-import Tetris from "./Tetris";
-import { Game } from "../../tetris-logic/pkg/rusty_web_tetris";
+import Page from "pages/Page";
 
 /**
  * Website StateManager
@@ -20,103 +15,56 @@ export default class StateManager {
 
     private static instance?: StateManager;
 
-    private mainMenu: MainMenuPage;
-    private gamePage: GamePage;
-    private pauseModal: PauseModal;
-    private gameOverModal: GameOverModal;
-    private game?: Tetris;
+    private stack: Page[] = [];
 
-    private constructor() {
-        // assign all the needed html elements we need to keep track of
-        this.mainMenu = new MainMenuPage();
-        this.gamePage = new GamePage();
-        this.pauseModal = new PauseModal();
-        this.gameOverModal = new GameOverModal();
-        this.game = undefined;
+    private constructor() { }
+
+    /**
+     * Push a new state onto the stack
+     * @param page state to transfer to
+     * @param hidePervious Should the current state be hidden
+     */
+    public Push(page: Page, hidePervious: boolean = true) {
+        if (this.stack.length > 0 && hidePervious) {
+            this.stack[this.stack.length - 1].hide();
+        }
+        this.stack.push(page);
+        this.stack[this.stack.length - 1].show();
     }
 
-    public GoToMainMenu() {
-        this.mainMenu.show();
-        this.gamePage.hide();
-        this.pauseModal.hide();
-        this.gameOverModal.hide();
-        /**
-         * Make the game null
-         */
-        this.game = undefined;
-    }
-
-    public GoToGameAndRestartGame() {
-        this.GoToGame();
-        this.game = new Tetris(Game.new(), this.gamePage.CalculateTetrisConfig());
-        this.game.startTetris();
-    }
-
-    public GoToGameAndStartGame() {
-        this.GoToGame();
-        this.game = new Tetris(Game.new(), this.gamePage.CalculateTetrisConfig());
-        this.game.startTetris();
-    }
-
-    public GoToGameAndResumeGame() {
-        this.GoToGame();
-        if (!this.game) {
-            throw new Error("[GoToGameAndResumeGame]: Game MUST exist for the game to be resumed");
-        } else {
-            this.game.play();
+    /**
+     * Pop the current state
+     */
+    public Pop() {
+        const page = this.stack.pop()!;
+        page.hide();
+        page.destroy();
+        if (this.stack.length > 0) {
+            const newPage = this.stack[this.stack.length - 1];
+            if (!newPage.isShowing()) {
+                newPage.show();
+            }
         }
     }
 
-    public GoToPauseModalAndPauseGame() {
-        this.GoToPauseGameModal();
-        if (!this.game) {
-            throw new Error("[GoToPauseModalAndPauseGame]: Game MUST exist for the game to be paused");
-        } else {
-            this.game.pause();
+    /**
+     * Pop the current state and push a new one on
+     * @param page state to transfer to
+     */
+    public Swap(page: Page) {
+        this.Pop();
+        this.Push(page);
+    }
+
+    /**
+     * Remove all pages and transfer to the new one
+     * @param page state to transfer to
+     */
+    public ClearAndPush(page: Page) {
+        while (this.stack.length !== 0) {
+            this.Pop();
         }
-    }
-
-    public GoToGameOverModalAndPauseGame() {
-        if (!this.game) {
-            console.log(this.game);
-            throw new Error("Tetris game must be running if 'GoToGameOverModal()' is called!");
-        }
-        if (!this.game.isGameOver) {
-            console.log(this.game.isGameOver);
-            throw new Error("Tetris game must be in a Game over state for 'GoToGameOverModal()' to be called");
-        }
-        console.log('pausing game');
-        this.game.pause();
-        this.GoToGameOverModal();
-    }
-
-    public GoToStatisticsPage() {
-        throw new Error("Method not implemented.");
-    }
-
-    public GoToCustomizePage() {
-        throw new Error("Method not implemented.");
-    }
-
-    private GoToGame() {
-        this.mainMenu.hide();
-        this.gamePage.show();
-        this.pauseModal.hide();
-        this.gameOverModal.hide();
-    }
-
-    private GoToPauseGameModal() {
-        this.mainMenu.hide();
-        this.gamePage.show();
-        this.pauseModal.show();
-        this.gameOverModal.hide();
-    }
-
-    private GoToGameOverModal() {
-        this.mainMenu.hide();
-        this.gamePage.show();
-        this.pauseModal.hide();
-        this.gameOverModal.show();
+        this.Push(page);
     }
 
 }

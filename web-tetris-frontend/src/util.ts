@@ -5,3 +5,7 @@ export function GetElementById(id: string): HTMLElement {
     }
     return temp;
 }
+
+export function randomInteger(max: number, min: number = 0) {
+    return Math.floor(Math.random() * Math.floor(max)) + Math.floor(min);
+}

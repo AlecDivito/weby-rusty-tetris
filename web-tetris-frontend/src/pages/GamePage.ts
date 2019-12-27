@@ -1,54 +1,66 @@
 import Page from "./Page";
 import { GetElementById } from "../util";
 import StateManager from "../StateManager";
-import { TetrisConfig } from "Tetris";
+import Tetris, { TetrisConfig } from "../Tetris";
+import PauseModal from "./PauseModal";
+import { Game } from "../../../tetris-logic/pkg/rusty_web_tetris";
 
 export default class GamePage extends Page {
-    
+
     private pauseBtn: HTMLButtonElement;
 
     private rightContentBar: HTMLElement;
-    private mainContentBar: HTMLElement
+    private mainContentBar: HTMLElement;
     private leftContentBar: HTMLElement;
 
+    private game: Tetris;
+
     constructor() {
-        super('game-page');
-        this.pauseBtn = GetElementById('game-pause') as HTMLButtonElement;
-        this.pauseBtn.addEventListener('click', this.pauseGame);
+        super("game-page");
+        this.pauseBtn = GetElementById("game-pause") as HTMLButtonElement;
+        this.pauseBtn.addEventListener("click", this.pauseGame);
 
-        this.rightContentBar = GetElementById('game__board__item--right');
-        this.mainContentBar = GetElementById('game__board__item--main');
-        this.leftContentBar = GetElementById('game__board__item--left');
+        this.rightContentBar = GetElementById("game__board__item--right");
+        this.mainContentBar = GetElementById("game__board__item--main");
+        this.leftContentBar = GetElementById("game__board__item--left");
+
+        this.game = new Tetris(Game.new(), this.CalculateTetrisConfig());
     }
 
-    show() {
-        this.BeforePageLoad();
-        super.show();
-    }
+    public show() {
+        const padding = 8 * 4;
+        const width = document.documentElement.clientWidth - padding;
 
-    hide() {
-        super.hide();
-    }
-
-    BeforePageLoad() {
-        let padding = 8 * 4;
-        let width = document.documentElement.clientWidth - padding;
-        
-        let mainWidth = .70 * width;
-        let sideWidth = .15 * width;
+        const mainWidth = .70 * width;
+        const sideWidth = .15 * width;
 
         this.rightContentBar.style.width = `${sideWidth}px`;
         this.leftContentBar.style.width = `${sideWidth}px`;
         this.mainContentBar.style.width = `${mainWidth}px`;
+        this.game.play();
+        return super.show();
     }
 
-    pauseGame = () => {
-        StateManager.GetInstance().GoToPauseModalAndPauseGame();
+    public hide() {
+        super.hide();
+        if (!this.game.isPaused && !this.game.isGameOver) {
+            this.game.pause();
+        }
     }
 
-    CalculateTetrisConfig(): TetrisConfig {
-        let width = document.documentElement.clientWidth - 8 * 4;
-        
+    public destroy() {
+        super.destroy();
+        this.pauseBtn.removeEventListener("click", this.pauseGame);
+    }
+
+    public pauseGame = () => {
+        this.game.pause();
+        StateManager.GetInstance().Push(new PauseModal(), false);
+    }
+
+    private CalculateTetrisConfig(): TetrisConfig {
+        const width = document.documentElement.clientWidth - 8 * 4;
+
         let cellSize = (.70 * width) / 10;
         let previewCellSize = (.15 * width) / 4;
 

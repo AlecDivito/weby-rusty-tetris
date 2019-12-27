@@ -1,6 +1,8 @@
-button {
+game-btn, .btn, button {
     font-family: $font;
     text-transform: $text-transform;
+
+    text-align: center;
 
 	position: relative;
     cursor: pointer;
@@ -17,12 +19,12 @@ button {
     transition: $button-transition;
 }
 
-button:hover {
+game-btn:hover, .btn:hover, button:hover {
 	box-shadow: $button-box-shadow-hover;
     top: $button-position-top-hover;
 }
 
-button:active {
+game-btn:active, .btn:active, button:active {
 	box-shadow: $button-box-shadow-active;
     top: $button-position-top-active;
 }
