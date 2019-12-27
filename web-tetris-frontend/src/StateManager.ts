@@ -24,8 +24,8 @@ export default class StateManager {
      * @param page state to transfer to
      * @param hidePervious Should the current state be hidden
      */
-    public Push(page: Page, hidePervious: boolean = true) {
-        if (this.stack.length > 0 && hidePervious) {
+    public Push(page: Page, hideAllPervious: boolean = true) {
+        if (this.stack.length > 0 && hideAllPervious) {
             this.stack[this.stack.length - 1].hide();
         }
         page.show();

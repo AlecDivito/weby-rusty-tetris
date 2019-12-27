@@ -32,9 +32,21 @@
       </div>
     </div>
 
-    <div id="settings-page">
+    <div id="settings-page" class="modal">
       <div class="settings">
-        <top-nav></top-nav>
+        <top-nav class="settings__nav"></top-nav>
+        <div class="card">
+          <div class="card__header">
+            <h1 class="card__title">Settings</h1>
+          </div>
+          <div class="card__content settings__list">
+            <game-btn>laksdjfljs</game-btn>
+            <game-btn>laksdjfljs</game-btn>
+            <game-btn>laksdjfljs</game-btn>
+            <game-btn>laksdjfljs</game-btn>
+          </div>
+        </div>
+        <div class="modal__wrapper modal__wrapper--background"></div>
       </div>
     </div>
 
@@ -111,13 +123,13 @@
       <div class="card">
         <div class="card__header">
           <h1 class="card__title">
-            Pause Game
+            Pause
           </h1>
         </div>
         <div class="card__content pause__list">
           <game-btn id="pause-game-resume">Resume</game-btn>
           <game-btn id="pause-game-restart">Restart</game-btn>
-          <game-btn id="pause-game-control">Controls</game-btn>
+          <game-btn id="pause-game-customize">Customize</game-btn>
           <game-btn id="pause-game-setting">Settings</game-btn>
           <game-btn id="pause-game-exit">Exit Game</game-btn>
         </div>

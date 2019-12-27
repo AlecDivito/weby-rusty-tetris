@@ -3,11 +3,13 @@ import StateManager from "../StateManager";
 import { GetElementById } from "../util";
 import MainMenuPage from "./MainMenuPage";
 import GamePage from "./GamePage";
+import SettingsPage from "./SettingsPage";
+import CustomizationPage from "./CustomizationPage";
 
 export default class PauseModal extends Page {
     private resumeBtn: HTMLButtonElement;
     private restartBtn: HTMLButtonElement;
-    private controlsBtn: HTMLButtonElement;
+    private customizeBtn: HTMLButtonElement;
     private settingsBtn: HTMLButtonElement;
     private exitGameBtn: HTMLButtonElement;
 
@@ -16,13 +18,13 @@ export default class PauseModal extends Page {
 
         this.resumeBtn = GetElementById("pause-game-resume") as HTMLButtonElement;
         this.restartBtn = GetElementById("pause-game-restart") as HTMLButtonElement;
-        this.controlsBtn = GetElementById("pause-game-control") as HTMLButtonElement;
+        this.customizeBtn = GetElementById("pause-game-customize") as HTMLButtonElement;
         this.settingsBtn = GetElementById("pause-game-setting") as HTMLButtonElement;
         this.exitGameBtn = GetElementById("pause-game-exit") as HTMLButtonElement;
 
         this.resumeBtn.addEventListener("click", this.resumeGame);
         this.restartBtn.addEventListener("click", this.restartGame);
-        this.controlsBtn.addEventListener("click", this.controlPage);
+        this.customizeBtn.addEventListener("click", this.customizePage);
         this.settingsBtn.addEventListener("click", this.settingPage);
         this.exitGameBtn.addEventListener("click", this.exitGame);
     }
@@ -36,7 +38,7 @@ export default class PauseModal extends Page {
         super.destroy();
         this.resumeBtn.removeEventListener("click", this.resumeGame);
         this.restartBtn.removeEventListener("click", this.restartGame);
-        this.controlsBtn.removeEventListener("click", this.controlPage);
+        this.customizeBtn.removeEventListener("click", this.customizePage);
         this.settingsBtn.removeEventListener("click", this.settingPage);
         this.exitGameBtn.removeEventListener("click", this.exitGame);
     }
@@ -50,12 +52,12 @@ export default class PauseModal extends Page {
         StateManager.GetInstance().Swap(new GamePage());
     }
 
-    private controlPage = () => {
-        throw new Error("TODO: implement control Page Button");
+    private customizePage = () => {
+        StateManager.GetInstance().Push(new CustomizationPage());
     }
 
     private settingPage = () => {
-        throw new Error("TODO: implement settings page button");
+        StateManager.GetInstance().Push(new SettingsPage());
     }
 
     private exitGame = () => {
