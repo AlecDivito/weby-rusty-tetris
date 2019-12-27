@@ -27,7 +27,31 @@ game-btn:hover, .btn:hover, button:hover {
     top: $button-position-top-hover;
 }
 
-game-btn:active, .btn:active, button:active {
+game-btn:active, game-btn.selected, .btn:active, button:active {
 	box-shadow: $button-box-shadow-active;
     top: $button-position-top-active;
+}
+
+.switch-btn-group {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+
+    game-btn {
+        width: 100%;
+        margin: 0;
+        border-radius: 0;
+        font-size: 24px;
+        border-right: solid 1px black;
+    }
+
+    game-btn:first-child {
+        border-top-left-radius: $border-radius;
+    }
+
+    game-btn:last-child {
+        border-top-right-radius: $border-radius;
+        border-right: none;
+    }
+
 }

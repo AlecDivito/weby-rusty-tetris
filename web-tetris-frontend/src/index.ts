@@ -9,7 +9,20 @@ try {
     RegisterGameButton();
     RegisterBottomNav();
     StateManager.GetInstance().Push(new MainMenuPage());
+
+    const list = document.querySelectorAll("game-btn") as NodeListOf<HTMLButtonElement>;
+    list.forEach((btn: HTMLButtonElement) => {
+        btn.addEventListener("click", buttonSelector);
+    });
 } catch (error) {
     console.error(error);
     console.error("Stop The Game Please!");
+}
+
+function buttonSelector(event: MouseEvent) {
+    document.querySelectorAll("game-btn").forEach( (btn) => {
+        btn.classList.remove("selected");
+    });
+    const self = event.target as HTMLButtonElement;
+    self.classList.add("selected");
 }
