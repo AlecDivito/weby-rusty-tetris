@@ -123,101 +123,20 @@ export default class InputController {
         /**
          * Mouse Controls
          */
-        const update = (event: MouseEvent) => {
-            this.mouseInput.x = event.clientX - this.canvasElement.offsetLeft;
-            this.mouseInput.y = event.clientY - this.canvasElement.offsetTop;
-            this.mouseInput.updated = true;
-        }
-        this.canvasElement.addEventListener("mousemove", update);
-        this.canvasElement.addEventListener("mouseenter", update);
-        this.canvasElement.addEventListener('mouseleave', update);
-        this.canvasElement.addEventListener('contextmenu', event => event.preventDefault());
-        this.canvasElement.addEventListener('mousedown', event => {
-            this.input.leftClick = [1, 3, 5, 7].includes(event.buttons);
-            this.input.rightClick = [2, 3, 6, 7].includes(event.buttons);
-            this.input.middleClick = [4, 5, 6, 7].includes(event.buttons);
-        });
-        this.canvasElement.addEventListener('mouseup', event => {
-            this.input.leftClick = [1, 3, 5, 7].includes(event.buttons);
-            this.input.rightClick = [2, 3, 6, 7].includes(event.buttons);
-            this.input.middleClick = [4, 5, 6, 7].includes(event.buttons);
-        });
+        this.canvasElement.addEventListener("mousemove", this.mouseEvent);
+        this.canvasElement.addEventListener("mouseenter", this.mouseEvent);
+        this.canvasElement.addEventListener("mouseleave", this.mouseEvent);
+        this.canvasElement.addEventListener("contextmenu", this.contextMenuEvent);
+        this.canvasElement.addEventListener("mousedown", this.mouseClickEvent);
+        this.canvasElement.addEventListener("mouseup", this.mouseClickEvent);
 
         /**
          * Touch Controls
          */
-
-        const updateTouch = (event: TouchEvent) => {
-            this.touchEventFirst = true;
-            if (event.type === 'touchend') {
-                const x = event.changedTouches[0].clientX - this.canvasElement.offsetLeft;
-                const y = event.changedTouches[0].clientY - this.canvasElement.offsetTop;
-
-                this.touchInput.x = x;
-                this.touchInput.y = y;
-
-                const diff_x = Math.floor(this.touchInput.startX - x);
-                const diff_y = Math.floor(this.touchInput.startY - y);
-                const timeDiff = event.timeStamp - this.touchInput.touchStartTime;
-                const threshold = 160; // 5 frames
-                const isTap = diff_x >= -1 && diff_x <= 1 && diff_y >= -1 && diff_y <= 1;
-                console.log(timeDiff, diff_x, diff_y, this.touchInput.startX, x);
-                if (timeDiff < threshold && isTap) {
-                    const width_offset = this.canvasElement.width / 2;
-                    if (x < width_offset) {
-                        this.input.tapLeft = true;
-                    } else {
-                        this.input.tapRight = true;
-                    }
-                }
-                return false;
-            }
-            
-            const x = event.targetTouches[0].clientX - this.canvasElement.offsetLeft;
-            const y = event.targetTouches[0].clientY - this.canvasElement.offsetTop;
-            if (event.type === 'touchstart') {
-                this.touchInput.x = x;
-                this.touchInput.y = y;
-                this.touchInput.timeStamp = event.timeStamp;
-
-                this.touchInput.startX = x;
-                this.touchInput.startY = y;
-                this.touchInput.touchStartTime = event.timeStamp;
-                return false;
-            }
-            const diff_x = this.touchInput.x - x;
-            const diff_y = this.touchInput.y - y;
-
-            const abs_x = Math.abs(diff_x);
-            const abs_y = Math.abs(diff_y);
-
-            const time = event.timeStamp - this.touchInput.timeStamp;
-            const velocity = Math.sqrt(abs_x * abs_x + abs_y * abs_y) / time;
-
-            const flick_threshold = .8;
-            const isFlick = velocity > flick_threshold;
-
-            const rad = Math.atan2(y - this.touchInput.y, x - this.touchInput.x);
-            const degree = Math.abs(rad) * 180 / Math.PI;
-
-            if (degree > 80 && degree < 100 && isFlick) {
-                // swipe down
-                this.input.dragDown = true;
-            } else if ((degree >= -45 && degree <= 45) || (degree < 225 && degree > 135)) {
-                // move left and right
-                this.touchInput.updated = true;
-                this.touchInput.x = x;
-                this.touchInput.y = y;
-                this.touchInput.timeStamp = event.timeStamp;
-                this.input.dragDown = false;
-            }
-            return false;
-        }
-
-        this.canvasElement.addEventListener('touchmove', updateTouch, { passive: true });
-        this.canvasElement.addEventListener('touchstart', updateTouch, { passive: true });
-        this.canvasElement.addEventListener('touchend', updateTouch, { passive: true});
-        this.holdPieceCanvas.addEventListener('click', () => this.input.tapHold = true);
+        this.canvasElement.addEventListener("touchmove", this.touchEvent, { passive: true });
+        this.canvasElement.addEventListener("touchstart", this.touchEvent, { passive: true });
+        this.canvasElement.addEventListener("touchend", this.touchEvent, { passive: true});
+        this.holdPieceCanvas.addEventListener("click", this.holdPieceEvent);
 
         this.listening = true;
     }
@@ -232,6 +151,16 @@ export default class InputController {
         }
         window.removeEventListener("keyup", this.keyboardEvent);
         window.removeEventListener("keydown", this.keyboardEvent);
+        this.canvasElement.removeEventListener("mousemove", this.mouseEvent);
+        this.canvasElement.removeEventListener("mouseenter", this.mouseEvent);
+        this.canvasElement.removeEventListener("mouseleave", this.mouseEvent);
+        this.canvasElement.removeEventListener("contextmenu", this.contextMenuEvent);
+        this.canvasElement.removeEventListener("mousedown", this.mouseClickEvent);
+        this.canvasElement.removeEventListener("mouseup", this.mouseClickEvent);
+        this.canvasElement.removeEventListener("touchmove", this.touchEvent);
+        this.canvasElement.removeEventListener("touchstart", this.touchEvent);
+        this.canvasElement.removeEventListener("touchend", this.touchEvent);
+        this.holdPieceCanvas.removeEventListener("click", this.holdPieceEvent);
         this.listening = false;
     }
 
@@ -288,23 +217,24 @@ export default class InputController {
     }
 
     public getTouchGridArea(cellSize: number, boundingBox: number): {x: number, y: number} | null {
-        let offset = boundingBox / 2;
+        const offset = boundingBox / 2;
         if (this.mouseInput.updated && this.touchEventFirst === false) {
-            let x = this.mouseInput.x,
-                y = this.mouseInput.y;
+            let x = this.mouseInput.x;
+            let y = this.mouseInput.y;
             x = Math.round(x / cellSize - offset);
             y = Math.round(y / cellSize - offset);
             this.mouseInput.updated = false;
             return { x, y };
         }
         if (this.touchInput.updated) {
-            let x = this.touchInput.x, y = this.touchInput.y;
+            let x = this.touchInput.x;
+            let y = this.touchInput.y;
             x = Math.round(x / cellSize - offset);
             y = Math.round(y / cellSize - offset);
             this.touchInput.updated = false;
-            return {x,y};
+            return { x, y };
         }
-        return null; 
+        return null;
     }
 
     /**
@@ -313,6 +243,93 @@ export default class InputController {
     private keyboardEvent = (event: KeyboardEvent) => {
         const code = this.getKeyCode(event);
         this.input[code] = event.type === "keydown";
+    }
+
+    private mouseEvent = (event: MouseEvent) => {
+        this.mouseInput.x = event.clientX - this.canvasElement.offsetLeft;
+        this.mouseInput.y = event.clientY - this.canvasElement.offsetTop;
+        this.mouseInput.updated = true;
+    }
+
+    private mouseClickEvent = (event: MouseEvent) => {
+        this.input.leftClick = [1, 3, 5, 7].includes(event.buttons);
+        this.input.rightClick = [2, 3, 6, 7].includes(event.buttons);
+        this.input.middleClick = [4, 5, 6, 7].includes(event.buttons);
+    }
+
+    private contextMenuEvent = (event: Event) => {
+        event.preventDefault();
+    }
+
+    private touchEvent = (event: TouchEvent) => {
+        this.touchEventFirst = true;
+        if (event.type === "touchend") {
+            const x = event.changedTouches[0].clientX - this.canvasElement.offsetLeft;
+            const y = event.changedTouches[0].clientY - this.canvasElement.offsetTop;
+
+            this.touchInput.x = x;
+            this.touchInput.y = y;
+
+            const diff_x = Math.floor(this.touchInput.startX - x);
+            const diff_y = Math.floor(this.touchInput.startY - y);
+            const timeDiff = event.timeStamp - this.touchInput.touchStartTime;
+            const threshold = 160; // 5 frames
+            const isTap = diff_x >= -1 && diff_x <= 1 && diff_y >= -1 && diff_y <= 1;
+            console.log(timeDiff, diff_x, diff_y, this.touchInput.startX, x);
+            if (timeDiff < threshold && isTap) {
+                const width_offset = this.canvasElement.width / 2;
+                if (x < width_offset) {
+                    this.input.tapLeft = true;
+                } else {
+                    this.input.tapRight = true;
+                }
+            }
+            return false;
+        }
+
+        const x = event.targetTouches[0].clientX - this.canvasElement.offsetLeft;
+        const y = event.targetTouches[0].clientY - this.canvasElement.offsetTop;
+        if (event.type === 'touchstart') {
+            this.touchInput.x = x;
+            this.touchInput.y = y;
+            this.touchInput.timeStamp = event.timeStamp;
+
+            this.touchInput.startX = x;
+            this.touchInput.startY = y;
+            this.touchInput.touchStartTime = event.timeStamp;
+            return false;
+        }
+        const diff_x = this.touchInput.x - x;
+        const diff_y = this.touchInput.y - y;
+
+        const abs_x = Math.abs(diff_x);
+        const abs_y = Math.abs(diff_y);
+
+        const time = event.timeStamp - this.touchInput.timeStamp;
+        const velocity = Math.sqrt(abs_x * abs_x + abs_y * abs_y) / time;
+
+        const flick_threshold = .8;
+        const isFlick = velocity > flick_threshold;
+
+        const rad = Math.atan2(y - this.touchInput.y, x - this.touchInput.x);
+        const degree = Math.abs(rad) * 180 / Math.PI;
+
+        if (degree > 80 && degree < 100 && isFlick) {
+            // swipe down
+            this.input.dragDown = true;
+        } else if ((degree >= -45 && degree <= 45) || (degree < 225 && degree > 135)) {
+            // move left and right
+            this.touchInput.updated = true;
+            this.touchInput.x = x;
+            this.touchInput.y = y;
+            this.touchInput.timeStamp = event.timeStamp;
+            this.input.dragDown = false;
+        }
+        return false;
+    }
+
+    private holdPieceEvent = () => {
+        this.input.tapHold = true;
     }
 
     /**

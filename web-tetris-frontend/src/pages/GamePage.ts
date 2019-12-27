@@ -51,6 +51,7 @@ export default class GamePage extends Page {
     public destroy() {
         super.destroy();
         this.pauseBtn.removeEventListener("click", this.pauseGame);
+        this.game.destroy();
     }
 
     public pauseGame = () => {

@@ -19,7 +19,7 @@ export interface TetrisConfig {
  * Tetris is a small layer that surrounds our tetris game logic in web assembly.
  * Tetris's only job is to run the main loop of the program and update the game
  * board as the state of the game changes
- * 
+ *
  * Tetris is strongly linked to the index.html page and assumes certain span and
  * canvas elements will be there
  */
@@ -115,7 +115,7 @@ class Tetris {
 
         /**
          * Initialize Input Controls
-         * 
+         *
          */
         this.inputController = new InputController(this.canvas, holdPiece);
         this.inputController.start();
@@ -153,9 +153,14 @@ class Tetris {
     public play() {
         if (this.isPaused) {
             this.animationId = requestAnimationFrame(this.run);
+            this.updateQueuedPieces();
         } else {
             throw new Error("Can't play the game when it is already playing");
         }
+    }
+
+    public destroy() {
+        this.inputController.stop();
     }
 
     /**
@@ -177,6 +182,7 @@ class Tetris {
         //     }
         // }
         // handle all the queued events on the input controller
+        // tslint:disable-next-line: max-line-length
         const touchControls = this.inputController.getTouchGridArea(this.config.cellSize, this.tetrisGame.get_piece_bounding_box());
         if (touchControls) {
             this.tetrisGame.touch_event_handler(touchControls.x, touchControls.y);
@@ -200,7 +206,7 @@ class Tetris {
         }
 
         this.animationId = requestAnimationFrame(this.run);
-    };
+    }
 
     /***************************************************************************
      * DRAW CODE
