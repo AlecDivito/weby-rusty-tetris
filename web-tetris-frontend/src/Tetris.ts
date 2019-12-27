@@ -3,6 +3,7 @@ import { memory } from "../../tetris-logic/pkg/rusty_web_tetris_bg";
 import InputController from "./InputController";
 import StateManager from "./StateManager";
 import GameOverModal from "./pages/GameOverModal";
+import { GetElementById } from "./util";
 
 const DEBUG_GAME = false;
 const CELL_PREVIEW_AMOUNT = 6;
@@ -91,7 +92,7 @@ class Tetris {
         this.width = game.get_width();
         this.totalHeight = game.get_height();
         this.boardHeight = this.totalHeight - game.get_offset_height();
-        this.canvas = document.getElementById("tetris") as HTMLCanvasElement;
+        this.canvas = GetElementById("tetris") as HTMLCanvasElement;
         this.ctx = this.canvas.getContext("2d")!;
         this.config = config;
         this.canvas.height = (this.config.cellSize + 1) * this.height + 1;
@@ -101,17 +102,17 @@ class Tetris {
          * Initialize preview canvas
          *
          */
-        const previewCanvas = document.getElementById("preview") as HTMLCanvasElement;
+        const previewCanvas = GetElementById("preview") as HTMLCanvasElement;
         previewCanvas.height = this.config.previewCellSize * 4 * 6;
-        previewCanvas.width = this.config.previewCellSize * 4;
+        previewCanvas.width = 64;
 
         /**
          * Initialize hold piece canvas
          *
          */
-        const holdPiece = document.getElementById("hold_piece") as HTMLCanvasElement;
-        holdPiece.height = this.config.previewCellSize * 4;
-        holdPiece.width = this.config.previewCellSize * 4;
+        const holdPiece = GetElementById("hold_piece") as HTMLCanvasElement;
+        holdPiece.height = 64;
+        holdPiece.width = 64;
 
         /**
          * Initialize Input Controls
@@ -193,16 +194,14 @@ class Tetris {
         this.drawCells();
         this.drawPiece();
         this.updateHoldPiece();
-        document.getElementById("score")!.textContent = `${this.tetrisGame.get_score()}`;
+        GetElementById("game-score")!.textContent = `score: ${this.tetrisGame.get_score()}`;
 
         // A piece was merged into the board
         if (boardMerged) {
             // update queued pieces view
             this.updateQueuedPieces();
-            document.getElementById("level")!.textContent = `${this.tetrisGame.get_level()}`;
-            document.getElementById(
-                "rows_completed",
-            )!.textContent = `${this.tetrisGame.get_rows_completed()}`;
+            GetElementById("game-level")!.textContent = `${this.tetrisGame.get_level()}`;
+            GetElementById("game-rows")!.textContent = `${this.tetrisGame.get_rows_completed()}`;
         }
 
         this.animationId = requestAnimationFrame(this.run);
@@ -308,7 +307,7 @@ class Tetris {
      * Get and update preview canvas's with the next queued pieces
      */
     private updateQueuedPieces() {
-        const previewCanvas = document.getElementById("preview") as HTMLCanvasElement;
+        const previewCanvas = GetElementById("preview") as HTMLCanvasElement;
         const context = previewCanvas.getContext("2d");
         if (!context) {
             return;
@@ -319,8 +318,8 @@ class Tetris {
 
         const minX = 0;
         let minY = 0;
-        const maxX = this.config.previewCellSize * 4;
-        let maxY = this.config.previewCellSize * 4;
+        const maxX = previewCanvas.width;
+        let maxY = previewCanvas.height;
 
         // draw in background
         context.fillStyle = "#000000";
@@ -363,7 +362,7 @@ class Tetris {
      * Color in the piece that is currently being held
      */
     private updateHoldPiece() {
-        const holdCanvas = document.getElementById("hold_piece") as HTMLCanvasElement;
+        const holdCanvas = GetElementById("hold_piece") as HTMLCanvasElement;
         const holdCell = this.tetrisGame.get_hold_piece();
         const context = holdCanvas.getContext("2d")!;
         // draw in background

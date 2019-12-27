@@ -1,9 +1,6 @@
 #game-page {
     display: none;
-}
-
-#tetris {
-    box-shadow: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
+    overflow: hidden;
 }
 
 .game {
@@ -12,43 +9,84 @@
     margin: 0px;
     width: 100%;
     height: 100%;
-    padding: 4px;
     box-sizing: border-box;
 
     &__bar {
+        display: flex;
+
         width: 100%;
-        height: 1.5rem;
-        margin-bottom: .5rem;
+        margin-bottom: $margin;
+        padding: 0rem 1rem;
+
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        align-content: center;
+
+        box-sizing: border-box;
+
+        #game-time {
+            width: 100%;
+            text-align: center;
+            margin: 0;
+            font-size: 26px;
+        }
+
+        game-btn {
+            margin: 6px;
+        }
+
+        &--experience {
+            padding: 0rem .25rem;
+        }
+
+        &--bottom {
+            justify-content: center;
+        }
+    }
+
+    &__experience-bar {
+        position: absolute;
+        right: 0;
+        left: 0;
+
+        width: 56%;
+        height: 36px;
+
         background-color: red;
+
+        &--background {
+            background-color: white;
+            width: 100%;
+        }
+
+        &--text {
+            z-index: 1;
+            font-size: 26px;
+        }
     }
 
     &__board {
-        padding-top: 30px;
-        display: grid;
-        // grid-template-columns: 50px auto 50px;
-        // grid-template-rows: auto;
-        grid-template-areas: "sidebar main rightbar";
-        grid-column-gap: 2px;
-    
+        display: flex;
+        justify-content: space-evenly;
         width: 100%;
-        height: calc(100% - 90px);
-    
+        
         &__item {
-            overflow: hidden;
-    
-            &--left {
-                grid-area: sidebar;
-            }
-    
-            &--main {
-                grid-area: main;
-            }
-    
-            &--right {
-                grid-area: rightbar;
+        }
+
+        &__box {
+            margin-top: 2rem;
+            width: 64px;
+            height: 64px;
+            background-color: $primary-color;
+            color: $white;
+
+            > span {
+                font-size: 26px;
+                display: block;
+                text-align: center;
             }
         }
-    
     
     }
 }

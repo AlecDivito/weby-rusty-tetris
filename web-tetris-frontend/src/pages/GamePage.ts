@@ -28,16 +28,11 @@ export default class GamePage extends Page {
     }
 
     public show() {
-        const padding = 8 * 4;
-        const width = document.documentElement.clientWidth - padding;
-
-        const mainWidth = .70 * width;
-        const sideWidth = .15 * width;
-
-        this.rightContentBar.style.width = `${sideWidth}px`;
-        this.leftContentBar.style.width = `${sideWidth}px`;
-        this.mainContentBar.style.width = `${mainWidth}px`;
-        this.game.play();
+        this.rightContentBar.style.width = `${64}px`;
+        this.leftContentBar.style.width = `${64}px`;
+        if (!this.game.isGameOver) {
+            this.game.play();
+        }
         return super.show();
     }
 
@@ -55,7 +50,9 @@ export default class GamePage extends Page {
     }
 
     public pauseGame = () => {
-        this.game.pause();
+        if (this.game.isRunning) {
+            this.game.pause();
+        }
         StateManager.GetInstance().Push(new PauseModal(), false);
     }
 

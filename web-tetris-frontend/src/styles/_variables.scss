@@ -1,5 +1,6 @@
 // Colors
 $white: #fff;
+$primary-color: #ec3f3f;
 
 $font: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
 $text-transform: uppercase;
@@ -28,7 +29,7 @@ $card-content-margin: #{$margin * 2} 0rem 0rem 0rem;
 
 // Button
 $button-color: $white;
-$button-background-color: #cb4e4e;
+$button-background-color: #ec3f3f; //#cb4e4e;
 $button-padding: $padding;
 $button-border-radius: $border-radius;
 

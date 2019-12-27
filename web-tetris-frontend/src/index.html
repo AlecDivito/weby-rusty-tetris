@@ -104,25 +104,40 @@
     -->
     <div id="game-page" class="game">
       <div class="game__bar">
-        top
+        <game-btn id="game-back">←</game-btn>
+        <h1>Tetris</h1>
+        <game-btn id="game-settings">&#9881;</game-btn>
       </div>
       <div class="game__bar">
-        Top Bottom
+        <h3 id="game-time">00:00</h3>
+      </div>
+      <div class="game__bar game__bar--experience">
+        <span class="game__experience-bar--text" id="game-score">Score: 0</span>
+        <span class="game__experience-bar--text" id="game-rank">Rank: 1</span>
+        <div class="game__experience-bar game__experience-bar--background"></div>
+        <div class="game__experience-bar"></div>
       </div>
       <div class="game__board">
-        <div id="game__board__item--left" class="game__board__item game__board__item--left">
-          <canvas id="hold_piece"></canvas>
-          <h3>Score: <span id="score">0</span></h3>
-          <h3>level: <span id="level">0</span></h3>
-          <h3>Rows:  <span id="rows_completed">0</span></h3>
-          <button id="game-pause">⏸</button>
+        <div id="game__board__item--left" class="game__board__item">
+          <canvas id="hold_piece" width="64" height="64"></canvas>
+          <div class="game__board__box">
+            <span id="game-level">0</span>
+            <span>Level</span>
+          </div>
+          <div class="game__board__box">
+            <span id="game-rows">0</span>
+            <span>Rows</span>
+          </div>
         </div>
-        <div id="game__board__item--main" class="game__board__item game__board__item--main">
+        <div id="game__board__item--main" class="game__board__item">
           <canvas id="tetris"></canvas>
         </div>
-        <div id="game__board__item--right" class="game__board__item game__board__item--right">
-          <canvas id="preview"></canvas>
+        <div id="game__board__item--right" class="game__board__item">
+          <canvas id="preview" width="64"></canvas>
         </div>
+      </div>
+      <div class="game__bar game__bar--bottom">
+        <button id="game-pause">⏸</button>
       </div>
     </div>
 
