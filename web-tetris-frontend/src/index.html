@@ -22,6 +22,7 @@
         <game-btn class="btn" id="main-menu-play">New Game</game-btn>
         <game-btn class="btn" id="main-menu-custom">Customize</game-btn>
         <game-btn class="btn" id="main-menu-stats">Statistics</game-btn>
+        <bottom-nav></bottom-nav>
       </div>
     </div>
 
@@ -31,8 +32,26 @@
       </div>
     </div>
 
+    <div id="settings-page">
+      <div class="settings">
+        <top-nav></top-nav>
+      </div>
+    </div>
+
+    <div id="how-to-play-page">
+      <div class="how-to-play">
+        <top-nav></top-nav>
+      </div>
+    </div>
+
     <div id="statistics-page">
       <div class="stats">
+        <top-nav></top-nav>
+      </div>
+    </div>
+
+    <div id="how-to-play-page">
+      <div class="how-to-play">
         <top-nav></top-nav>
       </div>
     </div>
@@ -128,14 +147,16 @@
       setup listeners to listen for clicks
     -->
     <template id="top-nav">
-      <game-btn class="btn" id="main-menu-play">←</game-btn>
+      <game-btn class="btn" class="top-nav-back">←</game-btn>
       <h3>Tetris</h3>
-      <game-btn class="btn" id="main-menu-play">⌂</game-btn>
+      <game-btn class="btn" class="top-nav-home">⌂</game-btn>
     </template>
 
     
     <template id="bottom-nav">
-
+      <game-btn>&#128712;</game-btn>
+      <game-btn>&#9974;</game-btn>
+      <game-btn>&#9881;</game-btn>
     </template>
 
     <script src="./bootstrap.js"></script>

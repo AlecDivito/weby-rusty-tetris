@@ -28,8 +28,8 @@ export default class StateManager {
         if (this.stack.length > 0 && hidePervious) {
             this.stack[this.stack.length - 1].hide();
         }
+        page.show();
         this.stack.push(page);
-        this.stack[this.stack.length - 1].show();
     }
 
     /**
