@@ -135,15 +135,19 @@
       Examples:
         https://dribbble.com/shots/1216488-Tetris-Game-Over
     -->
-    <div id="game-over-modal" class="modal card game-over">
-      <div class="modal__wrapper"></div>
-      <h1 class="card__title">Game Over</h1>
-      <div class="card__content">
-        <h3 class="card__content__title">High Scores</h3>
-        <ul class="card__list"></ul>
+    <div id="game-over-modal" class="modal game-over">
+      <div class="card">
+        <div class="card__header">
+          <h1 class="card__title">Game Over</h1>
+        </div>
+        <div class="card__content">
+          <h3 class="card__content__title">High Scores</h3>
+          <ul class="card__list"></ul>
+        </div>
+        <button id="game-over-exit">🏠</button>
+        <button id="game-over-restart">↺</button>
       </div>
-      <button id="game-over-exit">🏠</button>
-      <button id="game-over-restart">↺</button>
+      <div class="modal__wrapper"></div>
     </div>
 
     <!-- Game Button Template
