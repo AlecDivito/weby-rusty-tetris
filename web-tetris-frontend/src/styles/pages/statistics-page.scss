@@ -1,3 +1,21 @@
 #statistics-page {
     display: none;
+    width: 100%;
+    height: 100%;
+}
+
+.stats {
+    width: calc(100% - 2rem);
+    height: calc(100% - #{$top-nav-height} - 1rem);
+    display: flex;
+    flex-direction: column;
+    padding: 0rem $padding $padding $padding;
+
+    &__content {
+        width: 100%;
+        height: 100%;
+        background-color: white;
+        border-bottom-left-radius: $border-radius;
+        border-bottom-right-radius: $border-radius;
+    }
 }
