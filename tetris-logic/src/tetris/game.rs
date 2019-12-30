@@ -137,7 +137,6 @@ impl Game {
         // TODO: use controller controls
         //       https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API
         // TODO: add mouse tracking
-        
         if self.game.is_paused() {
             return false;
         }
@@ -216,6 +215,11 @@ impl Game {
     /// Get the height of the game board
     pub fn get_height(&self) -> i32 {
         self.height
+    }
+
+    /// Get the amount of seconds the game has been played for
+    pub fn get_seconds(&self) -> f64 {
+        self.game.get_game_time() / 1000.0
     }
 
     /// Get the offset height to make the game field

@@ -20,6 +20,7 @@ impl Timer {
 /// Game Timer tracks all of the games timing and timing state
 pub struct GameTimer {
     timer: Timer,
+    game_time: f64,
     record_time: f64,
     update_now: bool,
     paused: bool,
@@ -30,6 +31,7 @@ impl GameTimer {
     pub fn new() -> GameTimer {
         GameTimer {
             timer: Timer::new(),
+            game_time: 0.0,
             record_time: 0.0,
             update_now: false,
             paused: false,
@@ -38,7 +40,9 @@ impl GameTimer {
 
     /// Update the time state
     pub fn update(&mut self, current_time: f64) {
-        self.record_time = self.record_time + self.timer.get_elapsed_time(current_time);
+        let time = self.timer.get_elapsed_time(current_time);
+        self.record_time = self.record_time + time;
+        self.game_time = self.game_time + time;
     }
 
     /// Check it's if the game should update
@@ -64,6 +68,11 @@ impl GameTimer {
     /// Get the amount of seconds in game that have passed
     pub fn get_record_time(&self) -> f64 {
         self.record_time
+    }
+
+    /// Get the amount of seconds that the game has been played for
+    pub fn get_game_time(&self) -> f64 {
+        self.game_time
     }
 
     /// Toggle pausing the game on and off
