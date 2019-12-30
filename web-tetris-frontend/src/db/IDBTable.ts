@@ -1,4 +1,4 @@
 export interface IDBTable {
-    tableName: string;
-    id: string;
+    readonly tableName: string;
+    readonly id: string;
 }

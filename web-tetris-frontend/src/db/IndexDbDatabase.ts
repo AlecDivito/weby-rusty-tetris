@@ -112,26 +112,32 @@ export default class IndexDbDatabase<T extends IDBTable> implements IQueryable<T
             };
 
             request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
-                console.assert(tableName, "TableName must exist if you are upgrading the database");
                 // save the database
                 const database: IDBDatabase = (event.target as any).result;
                 // create an object store for this database
-                const tableMetaData = StorageManager.GetInstance().getTableMetaData(tableName!);
-                console.assert(tableMetaData, `Table metadata doesn't exist ${tableName}`);
-                // create the table
-                const objectStore = database!.createObjectStore(tableName!, {
-                    keyPath: tableMetaData!.primaryKey!,
-                    autoIncrement: false,
-                });
+                let tableMetaData = [StorageManager.GetInstance().getTableMetaData(tableName!)!];
+                if (!tableMetaData[0]) {
+                    // probably creating the database
+                    tableMetaData = StorageManager.GetInstance().getMetaData();
+                }
+                console.assert(tableMetaData[0], `Table metadata doesn't exist ${tableMetaData[0]}`);
 
-                // create the columns
-                for (const field of tableMetaData!.fields) {
-                    if (field === tableMetaData!.primaryKey) {
-                        continue;
-                    }
-                    objectStore.createIndex(field, field, {
-                        unique: false,
+                for (const metaData of tableMetaData) {
+                    // create the table
+                    const objectStore = database!.createObjectStore(metaData.table!, {
+                        keyPath: metaData!.primaryKey!,
+                        autoIncrement: false,
                     });
+
+                    // create the columns
+                    for (const field of metaData!.fields) {
+                        if (field === metaData!.primaryKey) {
+                            continue;
+                        }
+                        objectStore.createIndex(field, field, {
+                            unique: false,
+                        });
+                    }
                 }
                 // TODO:
                 // currently assuming everything went hunky dory
