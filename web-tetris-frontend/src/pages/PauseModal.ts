@@ -47,9 +47,9 @@ export default class PauseModal extends Page {
         StateManager.GetInstance().Pop();
     }
 
-    private restartGame = () => {
+    private restartGame = async () => {
         StateManager.GetInstance().Pop();
-        StateManager.GetInstance().Swap(new GamePage());
+        StateManager.GetInstance().Swap(await GamePage.Create());
     }
 
     private customizePage = () => {
@@ -64,3 +64,4 @@ export default class PauseModal extends Page {
         StateManager.GetInstance().ClearAndPush(new MainMenuPage());
     }
 }
+

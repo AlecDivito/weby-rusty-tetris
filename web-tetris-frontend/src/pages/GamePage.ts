@@ -1,11 +1,17 @@
 import Page from "./Page";
 import { GetElementById } from "../util";
 import StateManager from "../StateManager";
-import Tetris, { TetrisConfig } from "../Tetris";
+import Tetris, { TetrisConfig, TetrisEvent } from "../Tetris";
 import PauseModal from "./PauseModal";
 import { Game } from "../../../tetris-logic/pkg/rusty_web_tetris";
+import { Settings } from "../models/Settings";
 
 export default class GamePage extends Page {
+
+    public static async Create(): Promise<GamePage> {
+        const settings = await Settings.GetSettings();
+        return new GamePage(settings);
+    }
 
     private pauseBtn: HTMLButtonElement;
 
@@ -15,7 +21,7 @@ export default class GamePage extends Page {
 
     private game: Tetris;
 
-    constructor() {
+    private constructor(settings: Settings) {
         super("game-page");
         this.pauseBtn = GetElementById("game-pause") as HTMLButtonElement;
         this.pauseBtn.addEventListener("click", this.pauseGame);
@@ -24,7 +30,8 @@ export default class GamePage extends Page {
         this.mainContentBar = GetElementById("game__board__item--main");
         this.leftContentBar = GetElementById("game__board__item--left");
 
-        this.game = new Tetris(Game.new(), this.CalculateTetrisConfig());
+        this.game = new Tetris(Game.new(), settings, this.CalculateTetrisConfig());
+        this.game.addEventListener(TetrisEvent.GAME_OVER, this.recordGame);
     }
 
     public show() {
@@ -54,6 +61,11 @@ export default class GamePage extends Page {
             this.game.pause();
         }
         StateManager.GetInstance().Push(new PauseModal(), false);
+    }
+
+    private recordGame = () => {
+        const record = this.game.getGameRecord();
+        record.Save();
     }
 
     private CalculateTetrisConfig(): TetrisConfig {

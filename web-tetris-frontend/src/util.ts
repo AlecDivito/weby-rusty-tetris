@@ -14,7 +14,7 @@ export function sanitizeId(id: string) {
     return id.replace(" ", "_").toLocaleLowerCase();
 }
 
-export default function toHHMMSS(time: number) {
+export function toHHMMSS(time: number) {
     time = Math.floor(time);
     const hours = Math.floor(time / 3600);
     const minutes = Math.floor((time - (hours * 3600)) / 60);
@@ -28,4 +28,13 @@ export default function toHHMMSS(time: number) {
     timeString += (seconds < 10) ? `0${seconds}` : `${seconds}`;
 
     return timeString;
+}
+
+export function uuid() {
+    const temp: any = [1e7];
+    // eslint-disable-next-line
+    return (temp + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c: any) =>
+        // eslint-disable-next-line
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    );
 }

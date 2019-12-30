@@ -62,8 +62,8 @@ export default class MainMenuPage extends Page {
         this.statisticsBtn.removeEventListener("click", this.statistics);
     }
 
-    private playGame = () => {
-        StateManager.GetInstance().Push(new GamePage());
+    private playGame = async () => {
+        StateManager.GetInstance().Push(await GamePage.Create());
     }
 
     private customize = () => {

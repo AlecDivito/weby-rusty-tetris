@@ -3,7 +3,10 @@ import { memory } from "../../tetris-logic/pkg/rusty_web_tetris_bg";
 import InputController from "./InputController";
 import StateManager from "./StateManager";
 import GameOverModal from "./pages/GameOverModal";
-import { GetElementById } from "./util";
+import { GetElementById, toHHMMSS } from "./util";
+import { Settings } from "./models/Settings";
+import { isObject } from "util";
+import GameRecord from "./models/GameRecord";
 
 const DEBUG_GAME = false;
 const CELL_PREVIEW_AMOUNT = 6;
@@ -15,6 +18,11 @@ export interface TetrisConfig {
     cellSize: number;
     previewCellSize: number;
 }
+export enum TetrisEvent {
+    GAME_OVER = 0,
+}
+
+type Callback = () => void;
 
 /**
  * Tetris is a small layer that surrounds our tetris game logic in web assembly.
@@ -28,6 +36,8 @@ class Tetris {
     private tetrisGame: Game;
     private inputController: InputController;
 
+    private callbackEvents: {[key in TetrisEvent]?: Callback[]} = {};
+
     private readonly canvas: HTMLCanvasElement;
     private readonly ctx: CanvasRenderingContext2D;
     private readonly width: number;
@@ -37,6 +47,7 @@ class Tetris {
     private animationId?: number = undefined;
 
     private config: TetrisConfig;
+    private settings: Settings;
 
     /**
      * Is the game paused
@@ -87,7 +98,7 @@ class Tetris {
      * @param game tetris game logic
      * @param config settings that change the way the game looks
      */
-    constructor(game: Game, config: TetrisConfig) {
+    constructor(game: Game, settings: Settings, config: TetrisConfig) {
         this.tetrisGame = game;
         this.width = game.get_width();
         this.totalHeight = game.get_height();
@@ -95,6 +106,7 @@ class Tetris {
         this.canvas = GetElementById("tetris") as HTMLCanvasElement;
         this.ctx = this.canvas.getContext("2d")!;
         this.config = config;
+        this.settings = settings;
         this.canvas.height = (this.config.cellSize + 1) * this.height + 1;
         this.canvas.width = (this.config.cellSize + 1) * this.width + 1;
 
@@ -121,6 +133,29 @@ class Tetris {
         this.inputController = new InputController(this.canvas, holdPiece);
         this.inputController.start();
     }
+
+    /***************************************************************************
+     * Game State
+     **************************************************************************/
+
+    public getGameRecord(): GameRecord {
+        const record = new GameRecord(
+            "placeholder",
+            this.tetrisGame.get_seconds(),
+            this.tetrisGame.get_score(),
+            this.tetrisGame.get_level(),
+            this.tetrisGame.get_rows_completed(),
+        );
+        return record;
+    }
+
+    public addEventListener(event: TetrisEvent, callback: Callback) {
+        if (!isObject(this.callbackEvents[event])) {
+            this.callbackEvents[event] = [];
+        }
+        this.callbackEvents[event]!.push(callback);
+    }
+
 
     /***************************************************************************
      * GAME LOGIC
@@ -170,7 +205,7 @@ class Tetris {
     private run = () => {
         // stop run look if game becomes paused
         if (this.isGameOver && this.isRunning) {
-            console.log("stop the game");
+            this.callbackEvents[TetrisEvent.GAME_OVER]?.forEach((cb) => cb());
             StateManager.GetInstance().Push(new GameOverModal(), false);
             return;
         }
@@ -194,6 +229,7 @@ class Tetris {
         this.drawCells();
         this.drawPiece();
         this.updateHoldPiece();
+        GetElementById("game-time")!.textContent = toHHMMSS(this.tetrisGame.get_seconds());
         GetElementById("game-score")!.textContent = `score: ${this.tetrisGame.get_score()}`;
 
         // A piece was merged into the board

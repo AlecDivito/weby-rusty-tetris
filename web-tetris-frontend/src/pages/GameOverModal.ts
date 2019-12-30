@@ -32,9 +32,9 @@ export default class GameOverModal extends Page {
         StateManager.GetInstance().ClearAndPush(new MainMenuPage());
     }
 
-    private restartGame = () => {
+    private restartGame = async () => {
         StateManager.GetInstance().Pop();
-        StateManager.GetInstance().Swap(new GamePage());
+        StateManager.GetInstance().Swap(await GamePage.Create());
     }
 
 }
