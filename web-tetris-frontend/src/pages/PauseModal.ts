@@ -28,10 +28,9 @@ export default class PauseModal extends Page {
         this.settingsBtn.addEventListener("click", this.settingPage);
         this.exitGameBtn.addEventListener("click", this.exitGame);
     }
-
-    public show(): boolean {
+    public show(): Promise<boolean> {
         super.show();
-        return false;
+        return Promise.resolve(false);
     }
 
     public destroy() {

@@ -25,10 +25,10 @@ export default abstract class Page {
      *      to hide the previous state, return true
      *      to keep the last state visible, return false
      */
-    public show(): boolean {
+    public async show(): Promise<boolean> {
         console.log(`showing ${this.id}`);
         this.parentElement.style.display = "block";
-        return true;
+        return Promise.resolve(true);
     }
 
     public isShowing(): boolean {

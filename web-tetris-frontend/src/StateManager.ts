@@ -24,24 +24,24 @@ export default class StateManager {
      * @param page state to transfer to
      * @param hidePervious Should the current state be hidden
      */
-    public Push(page: Page, hideAllPervious: boolean = true) {
+    public async Push(page: Page, hideAllPervious: boolean = true) {
         if (this.stack.length > 0 && hideAllPervious) {
             this.stack[this.stack.length - 1].hide();
         }
-        page.show();
+        await page.show();
         this.stack.push(page);
     }
 
     /**
      * Pop the current state
      */
-    public Pop() {
+    public async Pop() {
         const page = this.stack.pop()!;
         page.hide();
         page.destroy();
         if (this.stack.length > 0) {
             const newPage = this.stack[this.stack.length - 1];
-            newPage.show();
+            await newPage.show();
         }
     }
 
@@ -49,20 +49,20 @@ export default class StateManager {
      * Pop the current state and push a new one on
      * @param page state to transfer to
      */
-    public Swap(page: Page) {
-        this.Pop();
-        this.Push(page);
+    public async Swap(page: Page) {
+        await this.Pop();
+        await this.Push(page);
     }
 
     /**
      * Remove all pages and transfer to the new one
      * @param page state to transfer to
      */
-    public ClearAndPush(page: Page) {
+    public async ClearAndPush(page: Page) {
         while (this.stack.length !== 0) {
-            this.Pop();
+            await this.Pop();
         }
-        this.Push(page);
+        await this.Push(page);
     }
 
 }
