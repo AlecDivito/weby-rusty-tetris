@@ -48,15 +48,29 @@ export default class QueryService {
         if (!this.isConnected) {
             await this.connect();
         }
-        return await this.db.getAll(type, filter);
+        const data = await this.db.getAll(type, filter);
+        return data.map((item) => Object.create(type, this.makePropertiesObj(item)));
     }
-
 
     public async getById<T extends IDBTable>(type: T, id: string): Promise<T | undefined> {
         if (!this.isConnected) {
             await this.connect();
         }
-        return await this.db.getById(type, id);
+        const data = await this.db.getById(type, id);
+        if (data) {
+            return Object.create(type, this.makePropertiesObj(data));
+        }
+        return data;
     }
 
+    // Customize this if you don't want the default settings on the properties object.
+    private makePropertiesObj(obj: any): any {
+        return Object.keys(obj).reduce((propertiesObj: any, currentKey: any) => {
+            propertiesObj[currentKey] = {
+                value: obj[currentKey],
+                writable: false,
+            };
+            return propertiesObj;
+        }, {}); // The object passed in is the propertiesObj in the callback
+    }
 }
