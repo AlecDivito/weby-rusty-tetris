@@ -185,11 +185,19 @@
           <h1 class="card__title">Game Over</h1>
         </div>
         <div class="card__content">
+          <h3 class="card__content__title">Game Score</h3>
+          <div id="game-over-result"></div>
           <h3 class="card__content__title">High Scores</h3>
-          <ul class="card__list"></ul>
+          <div class="switch-btn-group">
+            <game-btn id="game-over-me">me</game-btn>
+            <game-btn id="game-over-friends">friends</game-btn>
+          </div>
+          <ul class="game-over__list"></ul>
         </div>
-        <button id="game-over-exit">🏠</button>
-        <button id="game-over-restart">↺</button>
+        <div class="game-over__footer">
+          <game-btn id="game-over-exit">🏠</game-btn>
+          <game-btn id="game-over-restart">↺</game-btn>
+        </div>
       </div>
       <div class="modal__wrapper"></div>
     </div>

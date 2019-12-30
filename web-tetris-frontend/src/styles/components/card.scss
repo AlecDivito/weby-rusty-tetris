@@ -30,5 +30,11 @@
 
     &__content {
         margin: $card-content-margin;
+
+        &__title {
+            font-size: 26px;
+            text-align: center;
+            margin: .5rem;
+        }
     }
 }

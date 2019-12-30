@@ -1,8 +1,6 @@
-import { Cell, Game, Action } from "../../tetris-logic/pkg/rusty_web_tetris";
+import { Cell, Game } from "../../tetris-logic/pkg/rusty_web_tetris";
 import { memory } from "../../tetris-logic/pkg/rusty_web_tetris_bg";
 import InputController from "./InputController";
-import StateManager from "./StateManager";
-import GameOverModal from "./pages/GameOverModal";
 import { GetElementById, toHHMMSS } from "./util";
 import { Settings } from "./models/Settings";
 import { isObject } from "util";
@@ -206,7 +204,6 @@ class Tetris {
         // stop run look if game becomes paused
         if (this.isGameOver && this.isRunning) {
             this.callbackEvents[TetrisEvent.GAME_OVER]?.forEach((cb) => cb());
-            StateManager.GetInstance().Push(new GameOverModal(), false);
             return;
         }
 

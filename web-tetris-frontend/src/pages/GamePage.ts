@@ -5,6 +5,7 @@ import Tetris, { TetrisConfig, TetrisEvent } from "../Tetris";
 import PauseModal from "./PauseModal";
 import { Game } from "../../../tetris-logic/pkg/rusty_web_tetris";
 import { Settings } from "../models/Settings";
+import GameOverModal from "./GameOverModal";
 
 export default class GamePage extends Page {
 
@@ -63,9 +64,13 @@ export default class GamePage extends Page {
         StateManager.GetInstance().Push(new PauseModal(), false);
     }
 
-    private recordGame = () => {
+    private recordGame = async () => {
+        this.game.pause();
         const record = this.game.getGameRecord();
-        record.Save();
+        await record.Save();
+        const gameOverState = new GameOverModal();
+        gameOverState.currentScore = record;
+        StateManager.GetInstance().Push(gameOverState, false);
     }
 
     private CalculateTetrisConfig(): TetrisConfig {

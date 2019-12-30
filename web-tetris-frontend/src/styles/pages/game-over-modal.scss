@@ -1,3 +1,43 @@
 #game-over-modal {
     display: none;
 }
+
+#game-over-result {
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.game-over {
+
+    &__list {
+        list-style-type: decimal-leading-zero;
+        padding: 0.5rem 1rem 0.5rem 30px;
+        margin-top: 6px;
+        border: 1px solid black;
+        border-bottom-left-radius: 1rem;
+        border-bottom-right-radius: 1rem;
+    }
+
+    &__footer {
+        display: flex;
+        justify-content: space-between;
+    }
+}
+
+.game-record {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+    text-align: end;
+    margin: auto;
+
+    :first-child {
+        text-align: left;
+    }
+
+    span {
+        width: 25%;
+        text-align: right;
+    }
+}

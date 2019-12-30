@@ -1,9 +1,23 @@
 export function GetElementById(id: string): HTMLElement {
     const temp = document.getElementById(id);
-    if (temp == null) {
+    if (temp === null) {
         throw new Error(`Div element [${id}] must exist for game to work!`);
     }
     return temp;
+}
+
+export function GetChildElement(parent: HTMLElement, selector: string): HTMLElement {
+    const temp = parent.querySelector<HTMLElement>(selector);
+    if (temp === null) {
+        throw new Error(`child element [${selector}] of #${parent.id} must exist for game to work!`);
+    }
+    return temp!;
+}
+
+export function ClearAllHTMLChildren(parent: HTMLElement) {
+    while (parent.firstChild) {
+        parent.removeChild(parent.firstChild);
+    }
 }
 
 export function randomInteger(max: number, min: number = 0) {

@@ -63,4 +63,3 @@ export default class PauseModal extends Page {
         StateManager.GetInstance().ClearAndPush(new MainMenuPage());
     }
 }
-
