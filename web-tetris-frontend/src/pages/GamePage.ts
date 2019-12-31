@@ -6,6 +6,7 @@ import PauseModal from "./PauseModal";
 import { Game } from "../../../tetris-logic/pkg/rusty_web_tetris";
 import { Settings } from "../models/Settings";
 import GameOverModal from "./GameOverModal";
+import SettingsPage from "./SettingsPage";
 
 export default class GamePage extends Page {
 
@@ -14,6 +15,8 @@ export default class GamePage extends Page {
         return new GamePage(settings);
     }
 
+    private backBtn: HTMLButtonElement;
+    private settingsBtn: HTMLButtonElement;
     private pauseBtn: HTMLButtonElement;
 
     private rightContentBar: HTMLElement;
@@ -24,7 +27,11 @@ export default class GamePage extends Page {
 
     private constructor(settings: Settings) {
         super("game-page");
+        this.backBtn = GetElementById("game-back") as HTMLButtonElement;
+        this.settingsBtn = GetElementById("game-settings") as HTMLButtonElement;
         this.pauseBtn = GetElementById("game-pause") as HTMLButtonElement;
+        this.backBtn.addEventListener("click", this.goBack);
+        this.settingsBtn.addEventListener("click", this.goToSettings);
         this.pauseBtn.addEventListener("click", this.pauseGame);
 
         this.rightContentBar = GetElementById("game__board__item--right");
@@ -55,6 +62,17 @@ export default class GamePage extends Page {
         super.destroy();
         this.pauseBtn.removeEventListener("click", this.pauseGame);
         this.game.destroy();
+    }
+
+    public goToSettings = () => {
+        if (this.game.isRunning) {
+            this.game.pause();
+        }
+        StateManager.GetInstance().Push(new SettingsPage(), false);
+    }
+
+    public goBack = () => {
+        StateManager.GetInstance().Pop();
     }
 
     public pauseGame = () => {
@@ -89,7 +107,7 @@ export default class GamePage extends Page {
         return {
             gridColor: "#FFF",
             cellSize,
-            previewCellSize
+            previewCellSize,
         };
     }
 
