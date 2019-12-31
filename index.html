@@ -1,68 +1,231 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <style>
-      body {
-        padding: 0;
-        margin: 0;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background-color: #333;
-      }
-      #tetris {
-        box-shadow: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
-      }
-      .container {
-        display: grid;
-        grid-template-columns: 150px auto 150px;
-        grid-template-rows: auto;
-        grid-template-areas: "sidebar main rightbar";
-        grid-column-gap: 2rem;
-      }
-      .container__item {
-        width: 100%;
-      }
-      .item--left {
-        grid-area: sidebar;
-      }
-      .item--main {
-        grid-area: main
-      }
-      .item--right {
-        grid-area: rightbar;
-      }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="utf-8">
-    <title>Hello wasm-pack!</title>
+    <link rel="stylesheet" href="./bootstrap.css">
+    <title>Tetris With Wasm</title>
   </head>
   <body>
-    <div class="container">
-
-      <div class="container__item item--left">
-        <canvas id="hold_piece"></canvas>
-        <h3>Score: <span id="score">0</span></h3>
-        <h3>level: <span id="level">0</span></h3>
-        <h3>Rows:  <span id="rows_completed">0</span></h3>
-      </div>
-      <div class="container__item item--main">
-        <canvas id="tetris"></canvas>
-      </div>
-      <div class="container__item item--right">
-        <canvas class="preview"></canvas>
-        <canvas class="preview"></canvas>
-        <canvas class="preview"></canvas>
-        <canvas class="preview"></canvas>
-        <canvas class="preview"></canvas>
-        <canvas class="preview"></canvas>
+    <!-- Main Menu page
+      Ability to access:
+        - (required) Game Page
+        - (optional) Quick Game Mode (just go start a game)
+        - (optional) Select Game Mode Page
+        - (optional) Controls Page 
+        - (optional) Stats? idk
+    -->
+    <div id="main-menu-page">
+      <div class="main-menu">
+        <h1 class="main-menu__title">Tetris</h1>
+        <canvas id="main-menu-canvas" class="main-menu__canvas"></canvas>
+        <game-btn class="btn" id="main-menu-play">New Game</game-btn>
+        <game-btn class="btn" id="main-menu-custom">Customize</game-btn>
+        <game-btn class="btn" id="main-menu-stats">Statistics</game-btn>
+        <bottom-nav></bottom-nav>
       </div>
     </div>
+
+    <div id="customization-page" class="modal">
+      <div class="custom">
+        <top-nav class="custom__nav"></top-nav>
+        <div class="modal__wrapper modal__wrapper--background"></div>
+      </div>
+    </div>
+
+    <div id="settings-page" class="modal">
+      <div class="settings">
+        <top-nav class="settings__nav"></top-nav>
+        <div class="card">
+          <div class="card__header">
+            <h1 class="card__title">Settings</h1>
+          </div>
+          <div class="card__content settings__list">
+            <game-btn>laksdjfljs</game-btn>
+            <game-btn>laksdjfljs</game-btn>
+            <game-btn>laksdjfljs</game-btn>
+            <game-btn>laksdjfljs</game-btn>
+          </div>
+        </div>
+        <div class="modal__wrapper modal__wrapper--background"></div>
+      </div>
+    </div>
+
+    <div id="how-to-play-page">
+      <top-nav></top-nav>
+      <div class="how-to-play">
+        <div class="switch-btn-group">
+          <game-btn id="statistics-statistics">General</game-btn>
+          <game-btn id="statistics-personal">Phone</game-btn>
+          <game-btn id="statistics-global">Desktop</game-btn>
+        </div>
+        <div class="how-to-play__content">
+
+        </div>
+      </div>
+    </div>
+
+    <div id="statistics-page">
+      <top-nav></top-nav>
+      <div class="stats">
+        <div class="switch-btn-group">
+          <game-btn id="statistics-statistics">Stats</game-btn>
+          <game-btn id="statistics-personal">Me</game-btn>
+          <game-btn id="statistics-global">Global</game-btn>
+        </div>
+        <div class="stats__content">
+
+        </div>
+      </div>
+    </div>
+
+    <div id="how-to-play-page">
+      <div class="how-to-play">
+        <top-nav></top-nav>
+      </div>
+    </div>
+    
+    <!-- Game page
+      Ability to:
+        - (required) Pause Game (Modal)
+        - (required) Lose Game  (Modal)
+      Must Show:
+        - (required) Holding Piece
+        - (required) Next Pieces
+        - (required) Level
+        - (required) Goal (number of pieces to match to get to next level)
+        - (required) Score
+        - (required) Pause Button
+        - (optional) coins -- this can be done later
+      Examples:
+        https://www.emmawang.me/ui?lightbox=dataItem-j0idzdxn
+        https://www.pinterest.ca/fduy96/tetris-ui/
+        http://www.douvilleart.com/new-page-81
+    -->
+    <div id="game-page" class="game">
+      <div class="game__bar">
+        <game-btn id="game-back">←</game-btn>
+        <h1>Tetris</h1>
+        <game-btn id="game-settings">&#9881;</game-btn>
+      </div>
+      <div class="game__bar">
+        <h3 id="game-time">00:00</h3>
+      </div>
+      <div class="game__bar game__bar--experience">
+        <span class="game__experience-bar--text" id="game-score">Score: 0</span>
+        <span class="game__experience-bar--text" id="game-rank">Rank: 1</span>
+        <div class="game__experience-bar game__experience-bar--background"></div>
+        <div class="game__experience-bar"></div>
+      </div>
+      <div class="game__board">
+        <div id="game__board__item--left" class="game__board__item">
+          <canvas id="hold_piece" width="64" height="64"></canvas>
+          <div class="game__board__box">
+            <span id="game-level">0</span>
+            <span>Level</span>
+          </div>
+          <div class="game__board__box">
+            <span id="game-rows">0</span>
+            <span>Rows</span>
+          </div>
+        </div>
+        <div id="game__board__item--main" class="game__board__item">
+          <canvas id="tetris"></canvas>
+        </div>
+        <div id="game__board__item--right" class="game__board__item">
+          <canvas id="preview" width="64"></canvas>
+        </div>
+      </div>
+      <div class="game__bar game__bar--bottom">
+        <button id="game-pause">⏸</button>
+      </div>
+    </div>
+
+    <!-- Pause Modal
+      Required:
+        - Title (Game Pause)
+        - Control Music Slider
+        - Control Sound Slider
+        - Restart Game
+        - Close Model
+      Examples:
+        https://www.pinterest.co.uk/pin/838443655599579811/
+    -->
+    <div id="pause-game-modal" class="modal pause">
+      <div class="card">
+        <div class="card__header">
+          <h1 class="card__title">
+            Pause
+          </h1>
+        </div>
+        <div class="card__content pause__list">
+          <game-btn id="pause-game-resume">Resume</game-btn>
+          <game-btn id="pause-game-restart">Restart</game-btn>
+          <game-btn id="pause-game-customize">Customize</game-btn>
+          <game-btn id="pause-game-setting">Settings</game-btn>
+          <game-btn id="pause-game-exit">Exit Game</game-btn>
+        </div>
+      </div>
+      <div class="modal__wrapper"></div>
+    </div>
+
+    <!-- Game Over Modal
+      Required:
+        - Score Board
+          - Name + Number
+        - Play Again
+        - Share High Score
+        - Go To Main Menu
+      Examples:
+        https://dribbble.com/shots/1216488-Tetris-Game-Over
+    -->
+    <div id="game-over-modal" class="modal game-over">
+      <div class="card">
+        <div class="card__header">
+          <h1 class="card__title">Game Over</h1>
+        </div>
+        <div class="card__content">
+          <h3 class="card__content__title">Game Score</h3>
+          <div id="game-over-result"></div>
+          <h3 class="card__content__title">High Scores</h3>
+          <div class="switch-btn-group">
+            <game-btn id="game-over-me">me</game-btn>
+            <game-btn id="game-over-friends">friends</game-btn>
+          </div>
+          <ul class="game-over__list"></ul>
+        </div>
+        <div class="game-over__footer">
+          <game-btn id="game-over-exit">🏠</game-btn>
+          <game-btn id="game-over-restart">↺</game-btn>
+        </div>
+      </div>
+      <div class="modal__wrapper"></div>
+    </div>
+
+    <!-- Game Button Template
+      Mimics button element, but just testing it out
+    -->
+    <template id="game-btn"></template>
+
+    <!-- Top Nav Template
+      setup listeners to listen for clicks
+    -->
+    <template id="top-nav">
+      <game-btn class="btn" class="top-nav-back">←</game-btn>
+      <h3>Tetris</h3>
+      <game-btn class="btn" class="top-nav-home">⌂</game-btn>
+    </template>
+
+    <!-- Bottom Nav Template
+      access how to play and settings pages
+      make game full screen
+    -->
+    <template id="bottom-nav">
+      <game-btn>&#128712;</game-btn>
+      <game-btn>&#9974;</game-btn>
+      <game-btn>&#9881;</game-btn>
+    </template>
+
     <script src="./bootstrap.js"></script>
   </body>
 </html>
