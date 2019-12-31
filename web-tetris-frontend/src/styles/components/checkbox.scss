@@ -1,0 +1,19 @@
+input[type=checkbox] {
+    appearance: button;
+    -webkit-appearance: button;
+    -moz-appearance: button;
+    -ms-progress-appearance: button;
+    width: 38px;
+    height: 38px;
+
+    background-color: white;
+    border: 6px solid $primary-color;
+
+    border-radius: 1rem;
+    box-shadow: $button-box-shadow-normal;
+}
+
+input[type=checkbox]:checked {
+    outline: none;
+    background-color: $primary-color;
+}

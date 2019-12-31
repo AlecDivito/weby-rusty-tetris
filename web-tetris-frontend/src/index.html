@@ -40,11 +40,39 @@
           <div class="card__header">
             <h1 class="card__title">Settings</h1>
           </div>
-          <div class="card__content settings__list">
-            <game-btn>laksdjfljs</game-btn>
-            <game-btn>laksdjfljs</game-btn>
-            <game-btn>laksdjfljs</game-btn>
-            <game-btn>laksdjfljs</game-btn>
+          <div class="card__content">
+            <ul class="settings__list">
+              <li class="settings__list__item">
+                <label>Sound</label>
+                <input type="checkbox" />
+              </li>
+              <li class="settings__list__item">
+                <label>Music</label>
+                <input type="checkbox" />
+              </li>
+              <li class="settings__list__item">
+                <label>Notifications</label>
+                <input type="checkbox" />
+              </li>
+              <li class="settings__list__item">
+                <label>Viberation</label>
+                <input type="checkbox" />
+              </li>
+              <li class="settings__list__item settings__list__item--slider-group">
+                <div class="settings__list__item__slider">
+                  <label>Volume</label>
+                  <h3>0</h3>
+                </div>
+                <input type="range" />
+              </li>
+              <li class="settings__list__item settings__list__item--slider-group">
+                <div class="settings__list__item__slider">
+                  <label>Sound</label>
+                  <h3>0</h3>
+                </div>
+                <input type="range" />
+              </li>
+            </ul>
           </div>
         </div>
         <div class="modal__wrapper modal__wrapper--background"></div>
@@ -91,7 +119,7 @@
           <div id="htp-desktop">
             <h1>Controls</h1>
             <ul>
-              <li>Use the mouse of the keyboard</li>
+              <li>Use the mouse or the keyboard</li>
             </ul>
           </div>
         </div>

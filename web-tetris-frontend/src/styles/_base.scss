@@ -23,6 +23,15 @@ body {
     background-color: #ccc;
 }
 
+h1, h2, h3, h4, h5, h6 {
+    margin: 0px;
+}
+
+ul, li {
+    padding: 0px;
+    margin: 0px;;
+}
+
 @media (prefers-color-scheme: dark) {
 
 }
