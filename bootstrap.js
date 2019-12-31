@@ -52,23 +52,23 @@
 /******/ 	function promiseResolve() { return Promise.resolve(); }
 /******/
 /******/ 	var wasmImportObjects = {
-/******/ 		"../tetris-logic/pkg/rusty_web_tetris_bg.wasm": function() {
+/******/ 		"./rusty_web_tetris_bg.wasm": function() {
 /******/ 			return {
 /******/ 				"./rusty_web_tetris.js": {
 /******/ 					"__wbindgen_object_drop_ref": function(p0i32) {
-/******/ 						return installedModules["../tetris-logic/pkg/rusty_web_tetris.js"].exports["__wbindgen_object_drop_ref"](p0i32);
+/******/ 						return installedModules["./rusty_web_tetris.js"].exports["__wbindgen_object_drop_ref"](p0i32);
 /******/ 					},
 /******/ 					"__wbindgen_string_new": function(p0i32,p1i32) {
-/******/ 						return installedModules["../tetris-logic/pkg/rusty_web_tetris.js"].exports["__wbindgen_string_new"](p0i32,p1i32);
+/******/ 						return installedModules["./rusty_web_tetris.js"].exports["__wbindgen_string_new"](p0i32,p1i32);
 /******/ 					},
 /******/ 					"__widl_f_log_1_": function(p0i32) {
-/******/ 						return installedModules["../tetris-logic/pkg/rusty_web_tetris.js"].exports["__widl_f_log_1_"](p0i32);
+/******/ 						return installedModules["./rusty_web_tetris.js"].exports["__widl_f_log_1_"](p0i32);
 /******/ 					},
 /******/ 					"__wbg_random_40717e477b6813d8": function() {
-/******/ 						return installedModules["../tetris-logic/pkg/rusty_web_tetris.js"].exports["__wbg_random_40717e477b6813d8"]();
+/******/ 						return installedModules["./rusty_web_tetris.js"].exports["__wbg_random_40717e477b6813d8"]();
 /******/ 					},
 /******/ 					"__wbindgen_throw": function(p0i32,p1i32) {
-/******/ 						return installedModules["../tetris-logic/pkg/rusty_web_tetris.js"].exports["__wbindgen_throw"](p0i32,p1i32);
+/******/ 						return installedModules["./rusty_web_tetris.js"].exports["__wbindgen_throw"](p0i32,p1i32);
 /******/ 					}
 /******/ 				}
 /******/ 			};
@@ -161,7 +161,7 @@
 /******/
 /******/ 		// Fetch + compile chunk loading for webassembly
 /******/
-/******/ 		var wasmModules = {"0":["../tetris-logic/pkg/rusty_web_tetris_bg.wasm"]}[chunkId] || [];
+/******/ 		var wasmModules = {"0":["./rusty_web_tetris_bg.wasm"]}[chunkId] || [];
 /******/
 /******/ 		wasmModules.forEach(function(wasmModuleId) {
 /******/ 			var installedWasmModuleData = installedWasmModules[wasmModuleId];
@@ -171,7 +171,7 @@
 /******/ 				promises.push(installedWasmModuleData);
 /******/ 			else {
 /******/ 				var importObject = wasmImportObjects[wasmModuleId]();
-/******/ 				var req = fetch(__webpack_require__.p + "" + {"../tetris-logic/pkg/rusty_web_tetris_bg.wasm":"05d38fa1c5a2fe3b8355"}[wasmModuleId] + ".module.wasm");
+/******/ 				var req = fetch(__webpack_require__.p + "" + {"./rusty_web_tetris_bg.wasm":"05d38fa1c5a2fe3b8355"}[wasmModuleId] + ".module.wasm");
 /******/ 				var promise;
 /******/ 				if(importObject instanceof Promise && typeof WebAssembly.compileStreaming === 'function') {
 /******/ 					promise = Promise.all([WebAssembly.compileStreaming(req), importObject]).then(function(items) {
