@@ -68,7 +68,8 @@ export default class QueryService {
         return Object.keys(obj).reduce((propertiesObj: any, currentKey: any) => {
             propertiesObj[currentKey] = {
                 value: obj[currentKey],
-                writable: false,
+                writable: true,
+                enumerable: true,
             };
             return propertiesObj;
         }, {}); // The object passed in is the propertiesObj in the callback

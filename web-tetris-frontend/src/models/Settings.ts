@@ -21,11 +21,7 @@ export class Settings implements ISettings, IDBTable {
         if (!setting) {
             return type;
         }
-        return new Settings(setting);
-    }
-
-    public static async Save(stats: Settings): Promise<boolean> {
-        return await QueryService.GetInstance().save(stats);
+        return setting;
     }
 
     public readonly tableName: string = "settings";
@@ -51,12 +47,16 @@ export class Settings implements ISettings, IDBTable {
     @Field("settings")
     public soundVolume: number;
 
-    private constructor(setting?: ISettings) {
-        this.sound = setting?.sound || true;
-        this.music = setting?.music || true;
-        this.notifications = setting?.notifications || true;
-        this.vibration = setting?.vibration || true;
-        this.musicVolume = setting?.musicVolume || 50;
-        this.soundVolume = setting?.soundVolume || 50;
+    private constructor() {
+        this.sound = true;
+        this.music = true;
+        this.notifications = true;
+        this.vibration = true;
+        this.musicVolume = 50;
+        this.soundVolume = 50;
+    }
+
+    public async save(): Promise<boolean> {
+        return await QueryService.GetInstance().save(this);
     }
 }

@@ -1,5 +1,5 @@
 import Page from "./Page";
-import { GetElementById, GetChildElement } from "../util";
+import { GetElementById } from "../util";
 
 export default class HowToPlayPage extends Page {
 

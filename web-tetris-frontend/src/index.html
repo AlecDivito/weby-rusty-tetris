@@ -43,34 +43,34 @@
           <div class="card__content">
             <ul class="settings__list">
               <li class="settings__list__item">
-                <label>Sound</label>
-                <input type="checkbox" />
+                <label for="sound">Sound</label>
+                <input id="sound" name="sound" type="checkbox" />
               </li>
               <li class="settings__list__item">
-                <label>Music</label>
-                <input type="checkbox" />
+                <label for="music">Music</label>
+                <input id="music" name="music" type="checkbox" />
               </li>
               <li class="settings__list__item">
-                <label>Notifications</label>
-                <input type="checkbox" />
+                <label for="notifications">Notifications</label>
+                <input id="notifications" name="notifications" type="checkbox" />
               </li>
               <li class="settings__list__item">
-                <label>Viberation</label>
-                <input type="checkbox" />
+                <label for="vibration">Viberation</label>
+                <input id="vibration" name="vibration" type="checkbox" />
               </li>
               <li class="settings__list__item settings__list__item--slider-group">
                 <div class="settings__list__item__slider">
-                  <label>Volume</label>
-                  <h3>0</h3>
+                  <label for="musicVolume">Music Volume</label>
+                  <h3 id="settings-music-volume">0</h3>
                 </div>
-                <input type="range" />
+                <input min="0" max="100" step="1" id="musicVolume" name="musicVolume" type="range" />
               </li>
               <li class="settings__list__item settings__list__item--slider-group">
                 <div class="settings__list__item__slider">
-                  <label>Sound</label>
-                  <h3>0</h3>
+                  <label for="soundVolume">Sound Volume</label>
+                  <h3 id="settings-sound-volume">0</h3>
                 </div>
-                <input type="range" />
+                <input min="0" max="100" step="1" id="soundVolume" name="soundVolume" type="range" />
               </li>
             </ul>
           </div>

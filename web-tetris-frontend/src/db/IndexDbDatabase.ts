@@ -34,6 +34,7 @@ export default class IndexDbDatabase<T extends IDBTable> implements IQueryable<T
             .filter((key) => metaData!.fields.includes(key))
             .forEach((key) => save[key] = (obj as any)[key]);
 
+        console.log(save);
         const request = this.database!
             .transaction(obj.tableName, "readwrite")
             .objectStore(obj.tableName)
