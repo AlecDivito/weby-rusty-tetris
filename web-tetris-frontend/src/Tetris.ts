@@ -5,6 +5,7 @@ import { GetElementById, toHHMMSS } from "./util";
 import { Settings } from "./models/Settings";
 import { isObject } from "util";
 import GameRecord from "./models/GameRecord";
+import Me from "./models/Me";
 
 const DEBUG_GAME = false;
 const CELL_PREVIEW_AMOUNT = 6;
@@ -24,7 +25,7 @@ type Callback = () => void;
 
 /**
  * Tetris is a small layer that surrounds our tetris game logic in web assembly.
- * Tetris's only job is to run the main loop of the program and update the game
+ * Tetris only job is to run the main loop of the program and update the game
  * board as the state of the game changes
  *
  * Tetris is strongly linked to the index.html page and assumes certain span and
@@ -46,6 +47,9 @@ class Tetris {
 
     private config: TetrisConfig;
     private settings: Settings;
+
+    // context
+    private me: Me;
 
     /**
      * Is the game paused
@@ -96,7 +100,7 @@ class Tetris {
      * @param game tetris game logic
      * @param config settings that change the way the game looks
      */
-    constructor(game: Game, settings: Settings, config: TetrisConfig) {
+    constructor(game: Game, settings: Settings, me: Me, config: TetrisConfig) {
         this.tetrisGame = game;
         this.width = game.get_width();
         this.totalHeight = game.get_height();
@@ -107,6 +111,9 @@ class Tetris {
         this.settings = settings;
         this.canvas.height = (this.config.cellSize + 1) * this.height + 1;
         this.canvas.width = (this.config.cellSize + 1) * this.width + 1;
+
+        // context
+        this.me = me;
 
         /**
          * Initialize preview canvas
@@ -226,10 +233,13 @@ class Tetris {
         this.drawCells();
         this.drawPiece();
         this.updateHoldPiece();
+        const currentScore = this.tetrisGame.get_score();
+        GetElementById("game-experience-bar")!.style.width = `${this.me.calculatePercentToNextRank(currentScore)}%`;
         GetElementById("game-time")!.textContent = toHHMMSS(this.tetrisGame.get_seconds());
-        GetElementById("game-score")!.textContent = `score: ${this.tetrisGame.get_score()}`;
+        GetElementById("game-score")!.textContent = `score: ${currentScore}`;
+        GetElementById("game-rank")!.textContent = `rank: ${this.me.rank}`;
 
-        // A piece was merged into the board
+            // A piece was merged into the board
         if (boardMerged) {
             // update queued pieces view
             this.updateQueuedPieces();

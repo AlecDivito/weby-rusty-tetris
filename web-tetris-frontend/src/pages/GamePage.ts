@@ -26,6 +26,7 @@ export default class GamePage extends Page {
     private leftContentBar: HTMLElement;
 
     private game: Tetris;
+    private me: Me;
 
     private constructor(settings: Settings, me: Me) {
         super("game-page");
@@ -40,7 +41,8 @@ export default class GamePage extends Page {
         this.mainContentBar = GetElementById("game__board__item--main");
         this.leftContentBar = GetElementById("game__board__item--left");
 
-        this.game = new Tetris(Game.new(), settings, this.CalculateTetrisConfig());
+        this.me = me;
+        this.game = new Tetris(Game.new(), settings, me, this.CalculateTetrisConfig());
         this.game.addEventListener(TetrisEvent.GAME_OVER, this.recordGame);
     }
 
@@ -87,7 +89,10 @@ export default class GamePage extends Page {
     private recordGame = async () => {
         this.game.pause();
         const record = this.game.getGameRecord();
+
         await record.Save();
+        await this.me.save(record.score);
+
         const gameOverState = new GameOverModal();
         gameOverState.currentScore = record;
         StateManager.GetInstance().Push(gameOverState, false);
