@@ -56,7 +56,7 @@ export class Settings implements ISettings, IDBTable {
         this.soundVolume = 50;
     }
 
-    public async save(): Promise<boolean> {
-        return await QueryService.GetInstance().save(this);
+    public save(): Promise<boolean> {
+        return QueryService.GetInstance().save(this);
     }
 }

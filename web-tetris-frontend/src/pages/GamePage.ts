@@ -7,12 +7,14 @@ import { Game } from "../../../tetris-logic/pkg/rusty_web_tetris";
 import { Settings } from "../models/Settings";
 import GameOverModal from "./GameOverModal";
 import SettingsPage from "./SettingsPage";
+import Me from "../models/Me";
 
 export default class GamePage extends Page {
 
     public static async Create(): Promise<GamePage> {
         const settings = await Settings.GetSettings();
-        return new GamePage(settings);
+        const me = await Me.GetMe();
+        return new GamePage(settings, me);
     }
 
     private backBtn: HTMLButtonElement;
@@ -25,7 +27,7 @@ export default class GamePage extends Page {
 
     private game: Tetris;
 
-    private constructor(settings: Settings) {
+    private constructor(settings: Settings, me: Me) {
         super("game-page");
         this.backBtn = GetElementById("game-back") as HTMLButtonElement;
         this.settingsBtn = GetElementById("game-settings") as HTMLButtonElement;
