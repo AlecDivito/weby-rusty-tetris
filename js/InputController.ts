@@ -1,4 +1,4 @@
-import { Action } from "../../tetris-logic/pkg/rusty_web_tetris";
+import { Action } from "../crates/pkg/rusty_web_tetris"
 
 export default class InputController {
 

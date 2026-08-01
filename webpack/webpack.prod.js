@@ -1,8 +1,8 @@
-const common = require("./webpack.config.js");
-const webpack = require("webpack");
+import common from "./webpack.config.js";
+import webpack from "webpack";
 // const UglifyJSPlugin = require("uglifyjs-webpack-plugin");
 
-module.exports = {
+export default {
     ...common,
     ...{
         mode: 'development'

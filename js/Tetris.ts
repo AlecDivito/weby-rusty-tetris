@@ -1,5 +1,5 @@
-import { Cell, Game, Action } from "../../tetris-logic/pkg/rusty_web_tetris";
-import { memory } from "../../tetris-logic/pkg/rusty_web_tetris_bg";
+import { Cell, Game, Action } from "../crates/pkg/rusty_web_tetris";
+import { memory } from "../crates/pkg/rusty_web_tetris_bg.wasm";
 import InputController from "./InputController";
 import StateManager from "./StateManager";
 

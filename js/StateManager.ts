@@ -3,7 +3,7 @@ import GamePage from "./pages/GamePage";
 import PauseModal from "./pages/PauseModal";
 import GameOverModal from "./pages/GameOverModal";
 import Tetris from "./Tetris";
-import { Game } from "../../tetris-logic/pkg/rusty_web_tetris";
+import { Game } from "../crates/pkg/rusty_web_tetris";
 
 /**
  * Website StateManager
