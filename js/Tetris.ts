@@ -168,13 +168,13 @@ class Tetris {
             return;
         }
 
-        // if (this.inputController.Input.Escape) {
-        //     if (this.isRunning) {
-        //         StateManager.GetInstance().GoToPauseModalAndPauseGame();
-        //     } else {
-        //         StateManager.GetInstance().GoToGameAndResumeGame()
-        //     }
-        // }
+        if (this.inputController.Input.Escape || this.inputController.Input.KeyP) {
+            if (this.isRunning) {
+                StateManager.GetInstance().GoToPauseModalAndPauseGame();
+            } else {
+                StateManager.GetInstance().GoToGameAndResumeGame()
+            }
+        }
         // handle all the queued events on the input controller
         const touchControls = this.inputController.getTouchGridArea(this.config.cellSize, this.tetrisGame.get_piece_bounding_box());
         if (touchControls) {

@@ -1,20 +1,24 @@
-use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::wasm_bindgen;
 
-use super::rotation::{Rotation, Direction};
-use super::game_timer::GameTimer;
 use super::action::Action;
 use super::cell::Cell;
-use super::point::Point;
+use super::game_timer::GameTimer;
 use super::piece::Piece;
+use super::point::Point;
+use super::rotation::{Direction, Rotation};
 
-use web_sys::console;
-use crate::utils::set_panic_hook;
-
+#[cfg(target_arch = "wasm32")]
 macro_rules! log {
-    ( $( $t:tt )* ) => {
-        web_sys::console::log_1(&format!( $( $t )* ).into());
-    }
+    ($($t:tt)*) => {
+        web_sys::console::log_1(&format!($($t)*).into());
+    };
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+macro_rules! log {
+    ($($t:tt)*) => {
+        println!($($t)*);
+    };
 }
 
 // TODO: test scoring system: https://tetris.fandom.com/wiki/Scoring#Guideline_scoring_system
@@ -47,7 +51,6 @@ pub fn shift<T>(array: &mut Vec<T>) -> Option<T> {
 
 #[wasm_bindgen]
 impl Game {
-
     /// Create a new tetris game
     pub fn new() -> Game {
         let game = GameTimer::new();
@@ -59,15 +62,14 @@ impl Game {
         let soft_drop = false;
         let game_over = false;
 
-        let cells = (0..width * height)
-            .map(|_i| Cell::EMPTY).collect();
+        let cells = (0..width * height).map(|_i| Cell::EMPTY).collect();
 
         let mut piece_queue = Cell::random_piece_queue();
         piece_queue.append(&mut Cell::random_piece_queue());
 
         let mut piece = match shift(&mut piece_queue) {
             Some(x) => Piece::new(x),
-            None => Piece::random()
+            None => Piece::random(),
         };
         piece.advance();
         let shadow_piece_position = Point::new(0, 0);
@@ -107,7 +109,7 @@ impl Game {
                 Action::HardDrop => self.hard_drop(),
                 Action::HoldPiece => self.hold_piece(),
                 Action::RotateClockWise => self.rotate(Direction::Right), // self.rotate_clockwise(),
-                Action::RotateCounterClockWise => self.rotate(Direction::Left),// self.rotate_counter_clockwise(),
+                Action::RotateCounterClockWise => self.rotate(Direction::Left), // self.rotate_counter_clockwise(),
                 Action::MoveLeft => self.move_piece(Direction::Left),
                 Action::MoveRight => self.move_piece(Direction::Right),
                 Action::SoftDrop => self.enable_soft_drop(),
@@ -123,12 +125,11 @@ impl Game {
     pub fn touch_event_handler(&mut self, target_x_pos: i32, target_y_pos: i32) {
         if target_x_pos > self.piece.get_position().x {
             while self.can_piece_go_right() && target_x_pos > self.get_piece_position().x {
-                self.piece.FORCE_MOVE_PIECE(Direction::Right);
-            } 
-        }
-        else if target_x_pos < self.piece.get_position().x {
+                self.piece.force_move_piece(Direction::Right);
+            }
+        } else if target_x_pos < self.piece.get_position().x {
             while self.can_piece_go_left() && target_x_pos < self.get_piece_position().x {
-                self.piece.FORCE_MOVE_PIECE(Direction::Left);
+                self.piece.force_move_piece(Direction::Left);
             }
         }
     }
@@ -138,11 +139,10 @@ impl Game {
         // TODO: use controller controls
         //       https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API
         // TODO: add mouse tracking
-        
+
         if self.game.is_paused() {
             return false;
         }
-        self.update_shadow_piece_position();
 
         self.game.update(elapsed_time);
         self.piece.update(elapsed_time);
@@ -171,8 +171,8 @@ impl Game {
             }
             self.soft_drop = false;
         }
+        self.update_shadow_piece_position();
         result
-
 
         // TODO WHEN DONE (OR BASICITY DONE):
         // CHECK OUT https://shop.tetris.com/
@@ -191,13 +191,13 @@ impl Game {
         // TODO: when starting game or resuming a game, trigger a count down timer from 3
 
         // TODO: Game must have this notice when the game starts (XXXX is the year the game was created)
-            // Game © 1985~XXXX Game Holding.
-            // Game logos, Game theme song and Tetriminos are trademarks of Game Holding.
-            // The Game trade dress is owned by Game Holding.
-            // Licensed to The Game Company.
-            // Game Game Design by Alexey Pajitnov.
-            // Game Logo Design by Roger Dean.
-            // All Rights Reserved.
+        // Game © 1985~XXXX Game Holding.
+        // Game logos, Game theme song and Tetriminos are trademarks of Game Holding.
+        // The Game trade dress is owned by Game Holding.
+        // Licensed to The Game Company.
+        // Game Game Design by Alexey Pajitnov.
+        // Game Logo Design by Roger Dean.
+        // All Rights Reserved.
     }
 
     pub fn is_game_over(&self) -> bool {
@@ -241,19 +241,29 @@ impl Game {
 
     /// Get the cells that are in queue to go next
     /// TODO: Give interface to be called without wasm_bindgen
-    pub fn get_queued_pieces(&self) -> * const Cell {
+    pub fn get_queued_pieces(&self) -> *const Cell {
         self.piece_queue.as_ptr()
     }
 
     /// Return a pointer to the first element in the boards vector
     /// TODO: Give interface to be called without wasm_bindgen
-    pub fn get_cells(&self) -> * const Cell {
+    pub fn get_cells(&self) -> *const Cell {
         self.cells.as_ptr()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn get_cell_vec(&self) -> &[Cell] {
+        &self.cells
+    }
+
+    #[cfg(test)]
+    pub(crate) fn get_piece(&mut self) -> &mut Piece {
+        &mut self.piece
     }
 
     /// Get the cells that make up the falling piece
     /// TODO: Give interface to be called without wasm_bindgen
-    pub fn get_pieces(&self) -> * const Cell {
+    pub fn get_pieces(&self) -> *const Cell {
         self.piece.get_piece()
     }
 
@@ -272,16 +282,15 @@ impl Game {
         self.piece.get_position()
     }
 
-    /// Get the position of the shadow piece 
+    /// Get the position of the shadow piece
     pub fn get_shadow_piece_position(&self) -> Point {
         self.shadow_piece_position.clone()
     }
 }
 
 impl Game {
-
     /// Return the next level's goal
-    /// 
+    ///
     /// The next levels goal is always the current level * 5
     fn get_next_level_goal(&self) -> u32 {
         // TODO: remove magic number
@@ -290,12 +299,16 @@ impl Game {
 
     /// Convert row and column to a position inside of the
     /// board array
-    fn get_index(&self, row: i32, col: i32) -> usize {
+    pub(crate) fn get_index(&self, row: i32, col: i32) -> usize {
         ((self.width * row) + col) as usize
     }
 
+    pub(crate) fn get_bounding_box_index(&self, row: i32, col: i32) -> usize {
+        ((self.piece.get_bounding_box_size() * row) + col) as usize
+    }
+
     /// Merge piece into board of cells
-    fn merge_piece_into_board(&mut self) {
+    pub(crate) fn merge_piece_into_board(&mut self) {
         for row in 0..self.piece.get_bounding_box_size() {
             for col in 0..self.piece.get_bounding_box_size() {
                 let cell = self.piece.get_cells()[self.piece.get_index(row, col)];
@@ -304,7 +317,7 @@ impl Game {
                 }
                 let world_coord = Point {
                     x: self.piece.get_position().x + col,
-                    y: self.piece.get_position().y + row
+                    y: self.piece.get_position().y + row,
                 };
 
                 let index = self.get_index(world_coord.y, world_coord.x);
@@ -314,7 +327,7 @@ impl Game {
     }
 
     /// Check if piece can advance on the board
-    /// 
+    ///
     /// make sure that all blocks under a cell is empty,
     /// otherwise return false to stop advancement
     fn can_piece_advance(&self) -> bool {
@@ -323,11 +336,10 @@ impl Game {
             for col in 0..self.piece.get_bounding_box_size() {
                 let local_index = self.piece.get_index(row, col);
                 if self.piece.get_cells()[local_index] != Cell::EMPTY {
-
                     // 2. convert the local lowest row into world coordinates
                     let world_coord = Point {
                         x: self.piece.get_position().x + col,
-                        y: self.piece.get_position().y + row
+                        y: self.piece.get_position().y + row,
                     };
 
                     // 3. check if piece will pass the border if it goes down 1 more
@@ -355,11 +367,10 @@ impl Game {
             for col in 0..self.piece.get_bounding_box_size() {
                 let local_index = self.piece.get_index(row, col);
                 if self.piece.get_cells()[local_index] != Cell::EMPTY {
-
                     // 2. convert the local lowest row into world coordinates
                     let world_coord = Point {
                         x: self.piece.get_position().x + col,
-                        y: self.piece.get_position().y + row
+                        y: self.piece.get_position().y + row,
                     };
 
                     // 3. now that the row is in world coordinates, check if there is a piece
@@ -386,11 +397,10 @@ impl Game {
             for col in 0..self.piece.get_bounding_box_size() {
                 let local_index = self.piece.get_index(row, col);
                 if self.piece.get_cells()[local_index] != Cell::EMPTY {
-
                     // 2. convert the local lowest row into world coordinates
                     let world_coord = Point {
                         x: self.piece.get_position().x + col,
-                        y: self.piece.get_position().y + row
+                        y: self.piece.get_position().y + row,
                     };
 
                     // 3. now that the row is in world coordinates, check if there is a piece
@@ -414,8 +424,6 @@ impl Game {
         // 1. find all removable rows
         let mut removable_rows = Vec::new();
         for row in (0..self.height).rev() {
-            // TODO: improve by stopping loop when row only contains empty cells
-            //       also have is_row_full return a enum
             if self.is_row_full(row) {
                 removable_rows.push(row);
             }
@@ -472,7 +480,7 @@ impl Game {
         }
     }
 
-    fn update_shadow_piece_position(&mut self) {
+    pub(crate) fn update_shadow_piece_position(&mut self) {
         // TODO: enabled by default
         let mut world_y = self.height;
         let world_x = self.piece.get_position().x;
@@ -494,9 +502,10 @@ impl Game {
                 // find largest stack
                 let mut breakout = false;
                 let world_col = world_x + col;
-                for world_row in self.piece.get_position().y..self.height {
+                for world_row in (self.piece.get_position().y + 1)..self.height {
                     let world_cell = self.cells[self.get_index(world_row, world_col)];
                     if world_cell != Cell::EMPTY && world_y > world_row - (row + 1) {
+                        // row: i32, col: i32 -> ((self.width * row) + col) as usize
                         world_y = world_row - (row + 1);
                         breakout = true;
                     }
@@ -506,7 +515,11 @@ impl Game {
                 }
             }
         }
-        self.shadow_piece_position = Point { x: world_x, y: world_y };
+        self.shadow_piece_position = Point {
+            x: world_x,
+            y: world_y,
+        };
+        log!("logging! {:#?}", self.shadow_piece_position);
     }
 
     fn is_row_full(&self, row: i32) -> bool {
@@ -516,7 +529,7 @@ impl Game {
                 return false;
             }
         }
-        return true
+        return true;
     }
 
     fn is_row_empty(&self, row: i32) -> bool {
@@ -526,7 +539,7 @@ impl Game {
                 return false;
             }
         }
-        return true
+        return true;
     }
 
     fn rotate(&mut self, direction: Direction) -> bool {
@@ -546,55 +559,65 @@ impl Game {
         let mut moves: Vec<(i32, i32)> = Vec::with_capacity(4);
         for row in 0..box_size {
             for col in 0..box_size {
-
                 let local_index = self.piece.get_index(row, col);
                 if self.piece.get_cells()[local_index] == Cell::EMPTY {
                     continue;
                 }
                 let world_point = Point {
                     x: self.piece.get_position().x + col,
-                    y: self.piece.get_position().y + row
+                    y: self.piece.get_position().y + row,
                 };
-                let rotated_vector_x = world_point.x - pivot.x;
-                let rotated_vector_y = world_point.y - pivot.y;
+                let rotated_vector_x = world_point.x - pivot.x; // 9 - 10 = -1
+                let rotated_vector_y = world_point.y - pivot.y; // 5 - 7 = -2
 
                 let rotation_matrix = match direction {
-                    Direction::Right => (1, -1),
+                    Direction::Right => (1, -1), // this one
                     Direction::Left => (-1, 1),
                 };
 
-                let transformed_vector_x = 0 * rotated_vector_x + rotation_matrix.1 * rotated_vector_y;
-                let transformed_vector_y = rotation_matrix.0 * rotated_vector_x +  0 * rotated_vector_y;
+                let transformed_vector_x = // 0 * -1 + 1 * -2 = 2
+                    /* 0 * rotated_vector_x +  */ rotation_matrix.1 * rotated_vector_y;
+                let transformed_vector_y = // -1 * 1 = -1
+                    rotation_matrix.0 * rotated_vector_x /* + 0 * rotated_vector_y  */;
 
-                let mut new_world_x = pivot.x + transformed_vector_x;
-                let mut new_world_y = pivot.y + transformed_vector_y;
+                let mut new_world_x = pivot.x + transformed_vector_x; // 10 + 2 = 12
+                let mut new_world_y = pivot.y + transformed_vector_y; // 7 + -1 = 6
 
                 if self.piece.get_type() == Cell::I {
                     if direction == Direction::Right {
-                        if self.piece.get_rotation() == Rotation::NORTH || self.piece.get_rotation() == Rotation::SOUTH {
-                            new_world_x = new_world_x - 1;
-                        } else if self.piece.get_rotation() == Rotation::EAST || self.piece.get_rotation() == Rotation::WEST {
+                        if self.piece.get_rotation() == Rotation::NORTH
+                            || self.piece.get_rotation() == Rotation::SOUTH
+                        {
+                            new_world_x = new_world_x - 1; // 12 - 1 = 11
+                        } else if self.piece.get_rotation() == Rotation::EAST
+                            || self.piece.get_rotation() == Rotation::WEST
+                        {
                             new_world_x = new_world_x + 1;
                         }
                     } else if direction == Direction::Left {
-                        if self.piece.get_rotation() == Rotation::NORTH || self.piece.get_rotation() == Rotation::SOUTH {
+                        if self.piece.get_rotation() == Rotation::NORTH
+                            || self.piece.get_rotation() == Rotation::SOUTH
+                        {
                             new_world_y = new_world_y - 1;
-                        } else if self.piece.get_rotation() == Rotation::EAST || self.piece.get_rotation() == Rotation::WEST {
+                        } else if self.piece.get_rotation() == Rotation::EAST
+                            || self.piece.get_rotation() == Rotation::WEST
+                        {
                             new_world_y = new_world_y + 1;
                         }
                     }
                 }
 
-                let new_local_x = new_world_x - self.piece.get_position().x;
-                let new_local_y = new_world_y - self.piece.get_position().y;
+                let new_local_x = new_world_x - self.piece.get_position().x; // 11 - 8 = 3
+                let new_local_y = new_world_y - self.piece.get_position().y; // 6 - 5 = 1
                 log!("({}, {})", new_local_x, new_local_y);
-
 
                 // 1. check if move is valid. If move is not valid, don't rotate
                 // 1.1 check if piece is inside right wall
-                let wall_kick_distance = new_world_x - self.width - 1;
-                if new_world_x > self.width - 1 && wall_kick_distance < wall_kick_translation.x {
-                    wall_kick_translation.x = wall_kick_distance;
+                let right_wall_kick_distance = -1 * (new_world_x - (self.width - 1)); // 11 - (10 - 1) = 2
+                if new_world_x > self.width - 1
+                    && right_wall_kick_distance < wall_kick_translation.x
+                {
+                    wall_kick_translation.x = right_wall_kick_distance;
                 }
                 // 1.2 check if piece is inside left wall
                 if new_world_x < 0 && new_world_x < wall_kick_translation.x {
@@ -620,7 +643,7 @@ impl Game {
             log!("{}, ({}, {})", new_index, i.0, i.1);
             self.piece.set_cell(new_index, self.piece.get_type());
         }
-        self.piece.get_position().x = self.piece.get_position().x + wall_kick_translation.x;
+        self.piece.get_position_ref().x = self.piece.get_position().x + wall_kick_translation.x;
         match direction {
             Direction::Right => self.piece.get_rotation().clockwise(),
             Direction::Left => self.piece.get_rotation().counter_clockwise(),
@@ -672,9 +695,10 @@ impl Game {
     fn get_next_piece(&mut self) {
         self.piece = match shift(&mut self.piece_queue) {
             Some(x) => Piece::new(x),
-            None => Piece::random()
+            None => Piece::random(),
         };
-        if self.piece_queue.len() <= 7 { // TODO: remove magic number
+        if self.piece_queue.len() <= 7 {
+            // TODO: remove magic number
             self.piece_queue.append(&mut Cell::random_piece_queue());
         }
     }
@@ -705,5 +729,82 @@ impl Game {
     fn enable_soft_drop(&mut self) -> bool {
         self.soft_drop = true;
         false
+    }
+
+    pub fn override_cell(&mut self, index: usize, cell: Cell) {
+        self.cells[index] = cell;
+    }
+
+    #[cfg(test)]
+    pub fn set_piece(&mut self, piece: Piece) {
+        self.piece = piece;
+    }
+
+    #[cfg(test)]
+    pub fn print(&self) {
+        let piece_bb = self.piece.get_bounding_box_size();
+        let cells = self.get_cell_vec();
+        for y in 0..self.height {
+            print!("{}{}|", y, if y < 10 { " " } else { "" });
+            for x in 0..self.width {
+                if self.piece.get_position().x <= x
+                    && self.piece.get_position().x + piece_bb > x
+                    && self.piece.get_position().y <= y
+                    && self.piece.get_position().y + piece_bb > y
+                {
+                    let local_x = x - self.piece.get_position().x;
+                    let local_y = y - self.piece.get_position().y;
+                    let cell = self
+                        .piece
+                        .get_cells()
+                        .get(self.get_bounding_box_index(local_y, local_x))
+                        .unwrap();
+                    if *cell != Cell::EMPTY {
+                        print!("{}|", cells[self.get_index(y, x)])
+                    } else {
+                        print!("{}|", cells[self.get_index(y, x)])
+                    }
+                } else if self.shadow_piece_position.x <= x
+                    && self.shadow_piece_position.x + piece_bb > x
+                    && self.shadow_piece_position.y <= y
+                    && self.shadow_piece_position.y + piece_bb > y
+                {
+                    let local_x = x - self.shadow_piece_position.x;
+                    let local_y = y - self.shadow_piece_position.y;
+                    let cell = self
+                        .piece
+                        .get_cells()
+                        .get(self.get_bounding_box_index(local_y, local_x))
+                        .unwrap();
+                    if *cell != Cell::EMPTY {
+                        print!("S|")
+                    } else {
+                        print!("{}|", cells[self.get_index(y, x)])
+                    }
+                } else {
+                    print!("{}|", cells[self.get_index(y, x)])
+                }
+            }
+            println!();
+        }
+    }
+}
+
+impl From<&str> for Game {
+    fn from(value: &str) -> Self {
+        let mut cells = Vec::new();
+        for line in value.trim().lines() {
+            for char in line.trim().chars() {
+                cells.push(Cell::from(char));
+            }
+        }
+
+        let mut game = Game::new();
+
+        for i in 0..cells.len() {
+            game.override_cell(i, cells[i]);
+        }
+
+        game
     }
 }
