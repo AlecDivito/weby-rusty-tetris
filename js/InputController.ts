@@ -6,6 +6,11 @@ export default class InputController {
     private canvasElement: HTMLCanvasElement;
     private holdPieceCanvas: HTMLCanvasElement;
 
+    // TODO: use controller controls
+    //       https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API
+    // TODO: add mouse tracking
+
+
     private input: { [key: string]: boolean } = {
         /**
          * Keyboard input
