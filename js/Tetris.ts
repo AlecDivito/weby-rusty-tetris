@@ -14,6 +14,28 @@ export interface TetrisConfig {
     previewCellSize: number;
 }
 
+// TODO WHEN DONE (OR BASICITY DONE):
+// CHECK OUT https://shop.tetris.com/
+// THIS COULD BE AN IDEA  TO HELP MONETIZE A WEBSITE
+
+// TODO: Sound effect on by default
+//       effect for rotation, movement, landing on surface, touching a wall,
+//       locking, line clear, game over
+
+// TODO: Must have music (song must be Korobeiniki)
+//       music on by default
+
+// TODO: when starting game or resuming a game, trigger a count down timer from 3
+
+ // TODO: Game must have this notice when the game starts (XXXX is the year the game was created)
+ // Game © 1985~XXXX Game Holding.
+ // Game logos, Game theme song and Tetriminos are trademarks of Game Holding.
+ // The Game trade dress is owned by Game Holding.
+ // Licensed to The Game Company.
+ // Game Game Design by Alexey Pajitnov.
+ // Game Logo Design by Roger Dean.
+ // All Rights Reserved.
+
 /**
  * Tetris is a small layer that surrounds our tetris game logic in web assembly.
  * Tetris's only job is to run the main loop of the program and update the game
@@ -168,13 +190,13 @@ class Tetris {
             return;
         }
 
-        // if (this.inputController.Input.Escape) {
-        //     if (this.isRunning) {
-        //         StateManager.GetInstance().GoToPauseModalAndPauseGame();
-        //     } else {
-        //         StateManager.GetInstance().GoToGameAndResumeGame()
-        //     }
-        // }
+        if (this.inputController.Input.Escape || this.inputController.Input.KeyP) {
+            if (this.isRunning) {
+                StateManager.GetInstance().GoToPauseModalAndPauseGame();
+            } else {
+                StateManager.GetInstance().GoToGameAndResumeGame()
+            }
+        }
         // handle all the queued events on the input controller
         const touchControls = this.inputController.getTouchGridArea(this.config.cellSize, this.tetrisGame.get_piece_bounding_box());
         if (touchControls) {

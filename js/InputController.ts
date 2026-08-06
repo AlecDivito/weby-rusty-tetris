@@ -6,6 +6,11 @@ export default class InputController {
     private canvasElement: HTMLCanvasElement;
     private holdPieceCanvas: HTMLCanvasElement;
 
+    // TODO: use controller controls
+    //       https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API
+    // TODO: add mouse tracking
+
+
     private input: { [key: string]: boolean } = {
         /**
          * Keyboard input
@@ -21,6 +26,7 @@ export default class InputController {
         KeyC: false,
         KeyX: false,
         KeyZ: false,
+        KeyP: false,
         Numpad0: false,
         Numpad1: false,
         Numpad2: false,
@@ -87,6 +93,7 @@ export default class InputController {
         67:  "KeyC",
         88:  "KeyX",
         90:  "KeyZ",
+        80:  "KeyP",
         96:  "Numpad0",
         97:  "Numpad1",
         98:  "Numpad2",

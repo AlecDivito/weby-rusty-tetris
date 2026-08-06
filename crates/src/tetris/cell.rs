@@ -1,9 +1,11 @@
+use std::fmt::{Debug, Display};
+
 use wasm_bindgen::prelude::wasm_bindgen;
 
 /// A Cell is a byte representation of a possible pieces value
 #[wasm_bindgen]
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Cell {
     I = 0,
     O = 1,
@@ -15,11 +17,56 @@ pub enum Cell {
     EMPTY = 7,
 }
 
+impl From<char> for Cell {
+    fn from(value: char) -> Self {
+        match value {
+            'I' => Cell::I,
+            'O' => Cell::O,
+            'T' => Cell::T,
+            'S' => Cell::S,
+            'Z' => Cell::Z,
+            'J' => Cell::J,
+            'L' => Cell::L,
+            _ => Cell::EMPTY
+        }
+    }
+}
+
+impl Display for Cell {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let piece = match self {
+            Cell::I => "I",
+            Cell::O => "O",
+            Cell::T => "T",
+            Cell::S => "S",
+            Cell::Z => "Z",
+            Cell::J => "J",
+            Cell::L => "L",
+            Cell::EMPTY => " ",
+        };
+        write!(f, "{}", piece)
+    }
+}
+
+impl Debug for Cell {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::I => write!(f, "I"),
+            Self::O => write!(f, "O"),
+            Self::T => write!(f, "T"),
+            Self::S => write!(f, "S"),
+            Self::Z => write!(f, "Z"),
+            Self::J => write!(f, "J"),
+            Self::L => write!(f, "L"),
+            Self::EMPTY => write!(f, " "),
+        }
+    }
+}
+
 impl Cell {
 
     /// pick a random cell
     pub fn random() -> Cell {
-        // TODO: implement So-called 7-bag Random Generator (also called "random bag" or "7 system")
         let piece = (js_sys::Math::random() * 6.0).round() as i32;
         match piece {
             0 => Cell::I,
@@ -71,9 +118,21 @@ impl Cell {
 
     /// Random generator for next piece position
     /// Read More: https://tetris.fandom.com/wiki/Random_Generator
+    #[cfg(target_arch = "wasm32")]
     fn shuffle<T>(array: &mut Vec<T>) {
         for i in (0..array.len()).rev() {
             let mut j = (js_sys::Math::random() * ((i as f64) + 1.0)).round() as usize;
+            if j >= array.len() {
+                j = array.len() - 1;
+            }
+            array.swap(i, j);
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn shuffle<T>(array: &mut Vec<T>) {
+        for i in (0..array.len()).rev() {
+            let mut j = (rand::random_range(0.0..1.0) as f64 * ((i as f64) + 1.0)).round() as usize;
             if j >= array.len() {
                 j = array.len() - 1;
             }
