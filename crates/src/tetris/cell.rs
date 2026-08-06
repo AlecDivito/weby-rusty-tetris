@@ -67,7 +67,6 @@ impl Cell {
 
     /// pick a random cell
     pub fn random() -> Cell {
-        // TODO: implement So-called 7-bag Random Generator (also called "random bag" or "7 system")
         let piece = (js_sys::Math::random() * 6.0).round() as i32;
         match piece {
             0 => Cell::I,

@@ -68,11 +68,8 @@ impl Piece {
         self.record_timer = self.record_timer + self.timer.get_elapsed_time(elapsed_time);
     }
 
-    /// Can piece rotate is only true after a certain amount of time
-    /// passes
-    pub fn can_piece_rotate(&self) -> bool {
-        // TODO: remove magic number
-        self.record_timer > 250.0
+    pub fn get_record_timer(&self) -> f64 {
+        self.record_timer
     }
 
     pub fn reset_timer(&mut self) {
@@ -159,8 +156,6 @@ impl Piece {
         }
     }
 
-    // TODO: Please clean this up and actually fix the functions so that the
-    //       timer is not in the way
     pub fn force_move_piece(&mut self, direction: Direction) {
         match direction {
             Direction::Left => self.position.x -= 1,
@@ -252,20 +247,20 @@ mod test {
 
     fn action(game: &mut Game, action: Action) {
         game.get_piece().set_timer(1000.0);
-        game.event_handler(&mut [action as u8]);
+        game.event_handler(&mut [action]);
     }
 
     fn actions(game: &mut Game, actions: &[Action]) {
-        let mut u8_actions = actions.iter().map(|f| *f as u8).collect::<Vec<u8>>();
+        let mut vec_actions = actions.to_vec();
         game.get_piece().set_timer(1000.0);
-        game.event_handler(&mut u8_actions);
+        game.event_handler(&mut vec_actions);
     }
 
     #[test]
     pub fn test_rotation_left() {
         let mut game = Game::new();
         let mut piece = Piece::new(Cell::I);
-        let mut moves = [Action::RotateClockWise, Action::MoveLeft];
+        let moves = [Action::RotateClockWise, Action::MoveLeft];
         piece.set_position(Point::new(0, 5));
         game.set_piece(piece);
 

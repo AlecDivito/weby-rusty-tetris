@@ -1,5 +1,7 @@
 use wasm_bindgen::prelude::wasm_bindgen;
 
+use crate::tetris::config::Config;
+
 use super::action::Action;
 use super::cell::Cell;
 use super::game_timer::GameTimer;
@@ -21,7 +23,6 @@ macro_rules! log {
     };
 }
 
-// TODO: test scoring system: https://tetris.fandom.com/wiki/Scoring#Guideline_scoring_system
 #[wasm_bindgen]
 pub struct Game {
     game: GameTimer,
@@ -39,6 +40,8 @@ pub struct Game {
     can_swap_piece: bool,
     hold_piece: Cell,
     game_over: bool,
+    combo_count: u32,
+    config: Config,
 }
 
 /// try to remove the first element of the array
@@ -52,13 +55,17 @@ pub fn shift<T>(array: &mut Vec<T>) -> Option<T> {
 #[wasm_bindgen]
 impl Game {
     /// Create a new tetris game
-    pub fn new() -> Game {
+    pub fn new() -> Self {
+        Self::from_config(Config::default())
+    }
+
+    pub fn from_config(config: Config) -> Self {
         let game = GameTimer::new();
-        let score = 0;
-        let rows_completed = 0;
-        let level = 1;
-        let width = 10;
-        let height = 25;
+        let score = config.current_level;
+        let rows_completed = config.current_rows_completed;
+        let level = config.current_level;
+        let width = config.width as i32;
+        let height = config.height as i32;
         let soft_drop = false;
         let game_over = false;
 
@@ -93,36 +100,19 @@ impl Game {
             can_swap_piece,
             hold_piece,
             game_over,
+            combo_count: 0,
+            config,
         }
     }
 
-    /// TODO: Look into changing u8 into Action
-    /// wasm_bindgen should be able to have custom types
-    pub fn event_handler(&mut self, events: &mut [u8]) {
+    /// take in an array of byte events to apply to the game.
+    pub fn byte_event_handler(&mut self, events: &mut [u8]) {
         events.sort();
-        if !events.contains(&(Action::HardDrop as u8)) {
-            self.can_hard_drop = true;
-        }
-        for byte_action in events {
-            let action = Action::from(byte_action.clone());
-            let stop_updating = match action {
-                Action::HardDrop => self.hard_drop(),
-                Action::HoldPiece => self.hold_piece(),
-                Action::RotateClockWise => self.rotate(Direction::Right), // self.rotate_clockwise(),
-                Action::RotateCounterClockWise => self.rotate(Direction::Left), // self.rotate_counter_clockwise(),
-                Action::MoveLeft => self.move_piece(Direction::Left),
-                Action::MoveRight => self.move_piece(Direction::Right),
-                Action::SoftDrop => self.enable_soft_drop(),
-                Action::ToggleRunning => self.game.toggle_pause(),
-                _ => false,
-            };
-            if stop_updating {
-                break;
-            }
-        }
+        let actions = events.iter().map(|e| Action::from(*e)).collect::<Vec<_>>();
+        self.event_handler(&actions)
     }
 
-    pub fn touch_event_handler(&mut self, target_x_pos: i32, target_y_pos: i32) {
+    pub fn touch_event_handler(&mut self, target_x_pos: i32, _target_y_pos: i32) {
         if target_x_pos > self.piece.get_position().x {
             while self.can_piece_go_right() && target_x_pos > self.get_piece_position().x {
                 self.piece.force_move_piece(Direction::Right);
@@ -136,11 +126,7 @@ impl Game {
 
     /// Update the tetris board
     pub fn update(&mut self, elapsed_time: f64) -> bool {
-        // TODO: use controller controls
-        //       https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API
-        // TODO: add mouse tracking
-
-        if self.game.is_paused() {
+        if self.game.is_paused() || self.game_over {
             return false;
         }
 
@@ -157,15 +143,16 @@ impl Game {
                 result = false;
             } else {
                 self.merge_piece_into_board();
-                self.get_next_piece();
                 self.can_swap_piece = true;
                 if self.is_topped_out() {
                     self.game_over = true;
-                    // TODO: game lost logic
-                    log!("game lost");
                 } else {
                     self.update_board();
+                    self.get_next_piece();
                     self.piece.advance();
+                    if self.soft_drop {
+                        self.score += 1
+                    }
                 }
                 result = true;
             }
@@ -173,31 +160,6 @@ impl Game {
         }
         self.update_shadow_piece_position();
         result
-
-        // TODO WHEN DONE (OR BASICITY DONE):
-        // CHECK OUT https://shop.tetris.com/
-        // THIS COULD BE AN IDEA  TO HELP MONETIZE A WEBSITE
-
-        // TODO: when landing, use a half second lock delay
-        //       https://tetris.fandom.com/wiki/Lock_delay
-
-        // TODO: Sound effect on by default
-        //       effect for rotation, movement, landing on surface, touching a wall,
-        //       locking, line clear, game over
-
-        // TODO: Must have music (song must be Korobeiniki)
-        //       music on by default
-
-        // TODO: when starting game or resuming a game, trigger a count down timer from 3
-
-        // TODO: Game must have this notice when the game starts (XXXX is the year the game was created)
-        // Game © 1985~XXXX Game Holding.
-        // Game logos, Game theme song and Tetriminos are trademarks of Game Holding.
-        // The Game trade dress is owned by Game Holding.
-        // Licensed to The Game Company.
-        // Game Game Design by Alexey Pajitnov.
-        // Game Logo Design by Roger Dean.
-        // All Rights Reserved.
     }
 
     pub fn is_game_over(&self) -> bool {
@@ -221,7 +183,7 @@ impl Game {
 
     /// Get the offset height to make the game field
     pub fn get_offset_height(&self) -> i32 {
-        self.height - 20
+        self.height + 5
     }
 
     /// Return the current level of the game board
@@ -240,29 +202,16 @@ impl Game {
     }
 
     /// Get the cells that are in queue to go next
-    /// TODO: Give interface to be called without wasm_bindgen
     pub fn get_queued_pieces(&self) -> *const Cell {
         self.piece_queue.as_ptr()
     }
 
     /// Return a pointer to the first element in the boards vector
-    /// TODO: Give interface to be called without wasm_bindgen
     pub fn get_cells(&self) -> *const Cell {
         self.cells.as_ptr()
     }
 
-    #[cfg(test)]
-    pub(crate) fn get_cell_vec(&self) -> &[Cell] {
-        &self.cells
-    }
-
-    #[cfg(test)]
-    pub(crate) fn get_piece(&mut self) -> &mut Piece {
-        &mut self.piece
-    }
-
     /// Get the cells that make up the falling piece
-    /// TODO: Give interface to be called without wasm_bindgen
     pub fn get_pieces(&self) -> *const Cell {
         self.piece.get_piece()
     }
@@ -293,18 +242,39 @@ impl Game {
     ///
     /// The next levels goal is always the current level * 5
     fn get_next_level_goal(&self) -> u32 {
-        // TODO: remove magic number
-        self.level * 5
+        self.level * self.config.next_goal_multiplier
     }
 
+    /// Update the game state based on the input events provided
+    pub fn event_handler(&mut self, events: &[Action]) {
+        let mut vec_events = events.to_vec();
+        vec_events.sort();
+        if !events.contains(&Action::HardDrop) {
+            self.can_hard_drop = true;
+        }
+        for byte_action in events {
+            let action = Action::from(byte_action.clone());
+            let stop_updating = match action {
+                Action::HardDrop => self.hard_drop(),
+                Action::HoldPiece => self.hold_piece(),
+                Action::RotateClockWise => self.rotate(Direction::Right),
+                Action::RotateCounterClockWise => self.rotate(Direction::Left),
+                Action::MoveLeft => self.move_piece(Direction::Left),
+                Action::MoveRight => self.move_piece(Direction::Right),
+                Action::SoftDrop => self.enable_soft_drop(),
+                Action::ToggleRunning => self.game.toggle_pause(),
+                _ => false,
+            };
+            if stop_updating {
+                break;
+            }
+        }
+    }
+    
     /// Convert row and column to a position inside of the
     /// board array
     pub(crate) fn get_index(&self, row: i32, col: i32) -> usize {
         ((self.width * row) + col) as usize
-    }
-
-    pub(crate) fn get_bounding_box_index(&self, row: i32, col: i32) -> usize {
-        ((self.piece.get_bounding_box_size() * row) + col) as usize
     }
 
     /// Merge piece into board of cells
@@ -431,24 +401,22 @@ impl Game {
 
         // 2. if no rows are removable, return
         if removable_rows.len() == 0 {
+            self.combo_count = 0;
             return;
         }
 
         // 2. calculate points
-        // TODO: double check point system
-        // https://tetris.fandom.com/wiki/Scoring#Guideline_scoring_system
-        //          Single line: 1 line
-        //          Double line: 3 line
-        //          Triple line: 5 line
-        //          Game line: 8 line
         let rows_completed_score = match removable_rows.len() {
             0 => 0,
-            1 => 100,
-            2 => 300,
-            3 => 500,
-            4 => 800,
-            _ => 800,
+            // Single or (Mini T-Spin)
+            1 => (self.config.one_row_completed_score + self.combo_count) * self.level, 
+            2 => (self.config.two_row_completed_score + self.combo_count) * self.level, 
+            3 => (self.config.three_row_completed_score + self.combo_count) * self.level, 
+            4 => (self.config.four_row_completed_score + self.combo_count) * self.level, 
+            _ => (self.config.four_row_completed_score + self.combo_count) * self.level, 
         };
+        self.combo_count += self.config.combo_increment; 
+
         // update level if rows_completed passed a threshold
         self.score = self.score + rows_completed_score;
         self.rows_completed = self.rows_completed + (removable_rows.len() as u32);
@@ -481,7 +449,6 @@ impl Game {
     }
 
     pub(crate) fn update_shadow_piece_position(&mut self) {
-        // TODO: enabled by default
         let mut world_y = self.height;
         let world_x = self.piece.get_position().x;
         let size = self.piece.get_bounding_box_size();
@@ -519,7 +486,6 @@ impl Game {
             x: world_x,
             y: world_y,
         };
-        log!("logging! {:#?}", self.shadow_piece_position);
     }
 
     fn is_row_full(&self, row: i32) -> bool {
@@ -542,8 +508,12 @@ impl Game {
         return true;
     }
 
+
+
     fn rotate(&mut self, direction: Direction) -> bool {
-        if self.piece.can_piece_rotate() {
+        // Can piece rotate is only true after a certain amount of time
+        // passes
+        if self.piece.get_record_timer() > self.config.piece_rotation_wait_time {
             self.piece.reset_timer();
         } else {
             return false;
@@ -567,21 +537,19 @@ impl Game {
                     x: self.piece.get_position().x + col,
                     y: self.piece.get_position().y + row,
                 };
-                let rotated_vector_x = world_point.x - pivot.x; // 9 - 10 = -1
-                let rotated_vector_y = world_point.y - pivot.y; // 5 - 7 = -2
+                let rotated_vector_x = world_point.x - pivot.x;
+                let rotated_vector_y = world_point.y - pivot.y;
 
                 let rotation_matrix = match direction {
                     Direction::Right => (1, -1), // this one
                     Direction::Left => (-1, 1),
                 };
 
-                let transformed_vector_x = // 0 * -1 + 1 * -2 = 2
-                    /* 0 * rotated_vector_x +  */ rotation_matrix.1 * rotated_vector_y;
-                let transformed_vector_y = // -1 * 1 = -1
-                    rotation_matrix.0 * rotated_vector_x /* + 0 * rotated_vector_y  */;
+                let transformed_vector_x = rotation_matrix.1 * rotated_vector_y;
+                let transformed_vector_y = rotation_matrix.0 * rotated_vector_x;
 
-                let mut new_world_x = pivot.x + transformed_vector_x; // 10 + 2 = 12
-                let mut new_world_y = pivot.y + transformed_vector_y; // 7 + -1 = 6
+                let mut new_world_x = pivot.x + transformed_vector_x;
+                let mut new_world_y = pivot.y + transformed_vector_y;
 
                 if self.piece.get_type() == Cell::I {
                     if direction == Direction::Right {
@@ -607,9 +575,8 @@ impl Game {
                     }
                 }
 
-                let new_local_x = new_world_x - self.piece.get_position().x; // 11 - 8 = 3
-                let new_local_y = new_world_y - self.piece.get_position().y; // 6 - 5 = 1
-                log!("({}, {})", new_local_x, new_local_y);
+                let new_local_x = new_world_x - self.piece.get_position().x;
+                let new_local_y = new_world_y - self.piece.get_position().y;
 
                 // 1. check if move is valid. If move is not valid, don't rotate
                 // 1.1 check if piece is inside right wall
@@ -627,7 +594,6 @@ impl Game {
                 // 1.3 check if piece is inside piece
                 let new_world_index = self.get_index(new_world_y, new_world_x);
                 if self.cells[new_world_index] != Cell::EMPTY {
-                    // TODO: complicated wall kick
                     return false;
                 }
 
@@ -640,7 +606,6 @@ impl Game {
         }
         for i in &moves {
             let new_index = self.piece.get_index(i.1, i.0);
-            log!("{}, ({}, {})", new_index, i.0, i.1);
             self.piece.set_cell(new_index, self.piece.get_type());
         }
         self.piece.get_position_ref().x = self.piece.get_position().x + wall_kick_translation.x;
@@ -675,7 +640,6 @@ impl Game {
     }
 
     fn hold_piece(&mut self) -> bool {
-        // TODO: enabled by default
         if !self.can_swap_piece {
             return true;
         }
@@ -697,13 +661,11 @@ impl Game {
             Some(x) => Piece::new(x),
             None => Piece::random(),
         };
-        if self.piece_queue.len() <= 7 {
-            // TODO: remove magic number
+        if self.piece_queue.len() <= self.config.max_piece_queue_size {
             self.piece_queue.append(&mut Cell::random_piece_queue());
         }
     }
 
-    // TODO: add some more "fun" logic https://tetris.fandom.com/wiki/Top_out
     fn is_topped_out(&self) -> bool {
         for col in 0..self.width {
             let index = self.get_index(4, col);
@@ -716,12 +678,10 @@ impl Game {
 
     fn update_speed(&self) -> f64 {
         let update_speed = if self.soft_drop {
-            // TODO remove magic number
-            // this is the constant soft drop number
-            0.05
+            self.config.soft_drop_speed_multiplier
         } else {
             let level = (self.level as f64) - 1.0;
-            (0.8 - (level * 0.007)).powf(level)
+            (0.8 - (level * self.config.speed_multiplier)).powf(level)
         };
         update_speed * 1000.0
     }
@@ -733,6 +693,21 @@ impl Game {
 
     pub fn override_cell(&mut self, index: usize, cell: Cell) {
         self.cells[index] = cell;
+    }
+
+    #[cfg(test)]
+    pub(crate) fn get_bounding_box_index(&self, row: i32, col: i32) -> usize {
+        ((self.piece.get_bounding_box_size() * row) + col) as usize
+    }
+
+    #[cfg(test)]
+    pub(crate) fn get_cell_vec(&self) -> &[Cell] {
+        &self.cells
+    }
+
+    #[cfg(test)]
+    pub(crate) fn get_piece(&mut self) -> &mut Piece {
+        &mut self.piece
     }
 
     #[cfg(test)]
