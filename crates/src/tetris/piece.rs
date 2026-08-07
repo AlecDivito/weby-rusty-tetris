@@ -182,6 +182,15 @@ impl Piece {
         self.rotation.rotate(direction);
     }
 
+    pub fn get_t_spin_indicies(&self) -> [(i32, i32); 2] {
+        match self.rotation {
+            Rotation::NORTH => [(0, 0), (0, 2)],
+            Rotation::EAST => [(2, 0), (2, 2)],
+            Rotation::SOUTH => [(0, 2), (2, 2)],
+            Rotation::WEST => [(0, 0), (0, 2)],
+        }
+    }
+
     fn rotate_i(&mut self, direction: Direction) {
         let mut moves: Vec<(i32, i32)> = Vec::with_capacity(4);
 

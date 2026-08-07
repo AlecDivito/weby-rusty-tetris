@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::tetris::config::Config;
+use crate::tetris::scoring::{ScoreB2BType, TSpin};
 
 use super::action::Action;
 use super::cell::Cell;
@@ -42,6 +43,8 @@ pub struct Game {
     game_over: bool,
     combo_count: u32,
     config: Config,
+    actions: Vec<Action>,
+    score_b2b_type: ScoreB2BType,
 }
 
 /// try to remove the first element of the array
@@ -102,6 +105,8 @@ impl Game {
             game_over,
             combo_count: 0,
             config,
+            actions: vec![],
+            score_b2b_type: ScoreB2BType::None,
         }
     }
 
@@ -247,13 +252,13 @@ impl Game {
 
     /// Update the game state based on the input events provided
     pub fn event_handler(&mut self, events: &[Action]) {
-        let mut vec_events = events.to_vec();
-        vec_events.sort();
+        self.actions = events.to_vec();
+        self.actions.sort();
         if !events.contains(&Action::HardDrop) {
             self.can_hard_drop = true;
         }
-        for byte_action in events {
-            let action = Action::from(byte_action.clone());
+
+        for action in self.actions.clone() {
             let stop_updating = match action {
                 Action::HardDrop => self.hard_drop(),
                 Action::HoldPiece => self.hold_piece(),
@@ -392,6 +397,44 @@ impl Game {
         return allowed.iter().all(|v| *v == true);
     }
 
+    fn get_t_spin(&mut self) -> TSpin {
+        if self.piece.get_type() != Cell::T {
+            return TSpin::None;
+        }
+        if !self.actions.contains(&Action::RotateClockWise)
+            && !self.actions.contains(&Action::RotateCounterClockWise)
+        {
+            return TSpin::None;
+        }
+
+        let mut indices = vec![];
+        for row in [0, 2] {
+            for col in [0, 2] {
+                let world_x = self.piece.get_position_ref().x + col;
+                let world_y = self.piece.get_position_ref().y + row;
+                let world_index = self.get_index(world_x, world_y);
+                if self.cells[world_index] != Cell::EMPTY
+                    && world_x > 0
+                    && world_x < self.width
+                    && world_y > 0
+                    && world_y < self.height
+                {
+                    indices.push((row, col));
+                    continue;
+                }
+            }
+        }
+
+        let t_spin_indices = self.piece.get_t_spin_indicies();
+        if indices.len() < 3 {
+            TSpin::None
+        } else if t_spin_indices.iter().all(|f| indices.contains(f)) {
+            TSpin::Full
+        } else {
+            TSpin::Mini
+        }
+    }
+
     fn update_board(&mut self) {
         // 1. find all removable rows
         let mut removable_rows = Vec::new();
@@ -404,23 +447,55 @@ impl Game {
         // 2. if no rows are removable, return
         if removable_rows.len() == 0 {
             self.combo_count = 0;
+            self.score_b2b_type = ScoreB2BType::None;
             return;
         }
 
+        let t_spin = self.get_t_spin();
+
         // 2. calculate points
-        let rows_completed_score = match removable_rows.len() {
-            0 => 0,
+        let mut b2b_score_type = ScoreB2BType::None;
+        let base_score = match (removable_rows.len(), t_spin) {
             // Single or (Mini T-Spin)
-            1 => (self.config.one_row_completed_score + self.combo_count) * self.level,
-            2 => (self.config.two_row_completed_score + self.combo_count) * self.level,
-            3 => (self.config.three_row_completed_score + self.combo_count) * self.level,
-            4 => (self.config.four_row_completed_score + self.combo_count) * self.level,
-            _ => (self.config.four_row_completed_score + self.combo_count) * self.level,
+            (0, TSpin::None) => 0,
+            (1, TSpin::None) => 100,
+            (2, TSpin::None) => 300,
+            (3, TSpin::None) => 500,
+            (4, TSpin::None) => {
+                b2b_score_type = ScoreB2BType::Tetris;
+                800
+            }
+
+            (0, TSpin::Mini) => 100,
+            (1, TSpin::Mini) => 200,
+            (2, TSpin::Mini) => {
+                b2b_score_type = ScoreB2BType::MiniTSpinDouble;
+                400
+            }
+
+            (0, TSpin::Full) => 400,
+            (1, TSpin::Full) => {
+                b2b_score_type = ScoreB2BType::TSpinSingle;
+                800
+            }
+            (2, TSpin::Full) => {
+                b2b_score_type = ScoreB2BType::TSpinDouble;
+                1200
+            }
+            (3, TSpin::Full) => {
+                b2b_score_type = ScoreB2BType::TSpinTriple;
+                1600
+            }
+
+            _ => 0,
         };
+        let multiplier = if self.score_b2b_type != ScoreB2BType::None { 1.5 } else { 1.0 };
+        self.score += ((base_score as f64 * multiplier) as u32 + self.combo_count) * self.level;
+        self.score_b2b_type = b2b_score_type;
+
         self.combo_count += self.config.combo_increment;
 
         // update level if rows_completed passed a threshold
-        self.score = self.score + rows_completed_score;
         self.rows_completed = self.rows_completed + (removable_rows.len() as u32);
         if self.rows_completed > self.get_next_level_goal() {
             self.level = self.level + 1;
@@ -582,8 +657,8 @@ impl Game {
 
         if let Some((x, y)) = origin_move {
             println!("{:?}", self.piece.get_position_ref());
-            self.piece.get_position_ref().x += -1 * x ;
-            self.piece.get_position_ref().y += -1 * y ;
+            self.piece.get_position_ref().x += -1 * x;
+            self.piece.get_position_ref().y += -1 * y;
             println!("{:?}", self.piece.get_position_ref());
         } else {
             self.piece.set_timer(timer);
@@ -604,7 +679,7 @@ impl Game {
         if can_move {
             self.piece.move_piece(direction);
         }
-        true
+        false
     }
 
     fn hard_drop(&mut self) -> bool {

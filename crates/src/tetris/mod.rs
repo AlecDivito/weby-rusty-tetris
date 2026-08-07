@@ -9,3 +9,4 @@ pub mod piece;
 pub mod point;
 pub mod game;
 pub mod config;
+mod scoring;

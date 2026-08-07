@@ -4,9 +4,7 @@ pub struct Timer {
 
 impl Timer {
     pub fn new() -> Timer {
-        Timer {
-            last_time: 0.0
-        }
+        Timer { last_time: 0.0 }
     }
 
     pub fn get_elapsed_time(&mut self, current_time: f64) -> f64 {
@@ -15,7 +13,6 @@ impl Timer {
         elapsed_time
     }
 }
-
 
 /// Game Timer tracks all of the games timing and timing state
 pub struct GameTimer {
@@ -72,7 +69,7 @@ impl GameTimer {
         if self.is_running() {
             self.reset();
         }
-        false
+        true
     }
 
     /// Check if the game is currently running
