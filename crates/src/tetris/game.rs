@@ -7,7 +7,7 @@ use super::cell::Cell;
 use super::game_timer::GameTimer;
 use super::piece::Piece;
 use super::point::Point;
-use super::rotation::{Direction, Rotation};
+use super::rotation::Direction;
 
 #[cfg(target_arch = "wasm32")]
 macro_rules! log {
@@ -183,7 +183,7 @@ impl Game {
 
     /// Get the offset height to make the game field
     pub fn get_offset_height(&self) -> i32 {
-        self.height + 5
+        5
     }
 
     /// Return the current level of the game board
@@ -270,7 +270,7 @@ impl Game {
             }
         }
     }
-    
+
     /// Convert row and column to a position inside of the
     /// board array
     pub(crate) fn get_index(&self, row: i32, col: i32) -> usize {
@@ -363,31 +363,33 @@ impl Game {
     /// Check if a piece can move left
     fn can_piece_go_left(&self) -> bool {
         // 1. find the rightest point on the shape
+        let mut allowed = vec![];
         for row in 0..self.piece.get_bounding_box_size() {
             for col in 0..self.piece.get_bounding_box_size() {
                 let local_index = self.piece.get_index(row, col);
-                if self.piece.get_cells()[local_index] != Cell::EMPTY {
-                    // 2. convert the local lowest row into world coordinates
-                    let world_coord = Point {
-                        x: self.piece.get_position().x + col,
-                        y: self.piece.get_position().y + row,
-                    };
+                if self.piece.get_cells()[local_index] == Cell::EMPTY {
+                    continue;
+                }
+                // 2. convert the local lowest row into world coordinates
+                let world_coord = Point {
+                    x: self.piece.get_position().x + col,
+                    y: self.piece.get_position().y + row,
+                };
 
-                    // 3. now that the row is in world coordinates, check if there is a piece
-                    //    to the right of the game cell
-                    let world_index = self.get_index(world_coord.y, world_coord.x - 1);
-                    if self.cells[world_index] != Cell::EMPTY {
-                        return false;
-                    }
+                // 3. check if piece will pass the border if it goes down 1 more
+                if world_coord.x - 1 < 0 {
+                    allowed.push(false);
+                }
 
-                    // 4. check if piece will pass the border if it goes down 1 more
-                    if world_coord.x - 1 < 0 {
-                        return false;
-                    }
+                // 4. now that the row is in world coordinates, check if there is a piece
+                //    to the right of the game cell
+                let world_index = self.get_index(world_coord.y, world_coord.x - 1);
+                if self.cells[world_index] != Cell::EMPTY {
+                    allowed.push(false);
                 }
             }
         }
-        return true;
+        return allowed.iter().all(|v| *v == true);
     }
 
     fn update_board(&mut self) {
@@ -409,13 +411,13 @@ impl Game {
         let rows_completed_score = match removable_rows.len() {
             0 => 0,
             // Single or (Mini T-Spin)
-            1 => (self.config.one_row_completed_score + self.combo_count) * self.level, 
-            2 => (self.config.two_row_completed_score + self.combo_count) * self.level, 
-            3 => (self.config.three_row_completed_score + self.combo_count) * self.level, 
-            4 => (self.config.four_row_completed_score + self.combo_count) * self.level, 
-            _ => (self.config.four_row_completed_score + self.combo_count) * self.level, 
+            1 => (self.config.one_row_completed_score + self.combo_count) * self.level,
+            2 => (self.config.two_row_completed_score + self.combo_count) * self.level,
+            3 => (self.config.three_row_completed_score + self.combo_count) * self.level,
+            4 => (self.config.four_row_completed_score + self.combo_count) * self.level,
+            _ => (self.config.four_row_completed_score + self.combo_count) * self.level,
         };
-        self.combo_count += self.config.combo_increment; 
+        self.combo_count += self.config.combo_increment;
 
         // update level if rows_completed passed a threshold
         self.score = self.score + rows_completed_score;
@@ -449,41 +451,48 @@ impl Game {
     }
 
     pub(crate) fn update_shadow_piece_position(&mut self) {
-        let mut world_y = self.height;
-        let world_x = self.piece.get_position().x;
-        let size = self.piece.get_bounding_box_size();
-        for col in (0..size).rev() {
-            if col + world_x >= self.width || col + world_x < 0 {
-                // bounding box is off page, no point in checking
-                continue;
-            }
-            for row in (0..size).rev() {
-                let cell = self.piece.get_cells()[self.piece.get_index(row, col)];
-                if cell == Cell::EMPTY {
-                    continue;
-                }
-                if world_y > self.height - (row + 1) {
-                    world_y = self.height - (row + 1)
-                }
+        let mut world_y = 0;
+        for row in self.piece.get_position().y..self.height {
+            let mut passes = Vec::new();
+            for local_row in 0..self.piece.get_bounding_box_size() {
+                for local_col in 0..self.piece.get_bounding_box_size() {
+                    // 1. check if the local piece position is empty
+                    if self.piece.get_cell(local_row, local_col) == Cell::EMPTY {
+                        passes.push(true);
+                        continue;
+                    }
 
-                // find largest stack
-                let mut breakout = false;
-                let world_col = world_x + col;
-                for world_row in (self.piece.get_position().y + 1)..self.height {
-                    let world_cell = self.cells[self.get_index(world_row, world_col)];
-                    if world_cell != Cell::EMPTY && world_y > world_row - (row + 1) {
-                        // row: i32, col: i32 -> ((self.width * row) + col) as usize
-                        world_y = world_row - (row + 1);
-                        breakout = true;
+                    // The cell is an actual value, now we need to paste it onto the board
+                    // First check is if it's off the screen
+                    if row + local_row >= self.height {
+                        passes.push(false);
+                        continue;
                     }
-                    if breakout {
-                        break;
+
+                    if self.piece.get_position().x + local_col >= self.width {
+                        passes.push(false);
+                        continue;
+                    }
+
+                    // Check if the piece intersects with another piece
+                    let world_index =
+                        self.get_index(row + local_row, self.piece.get_position().x + local_col);
+                    if self.cells[world_index] == Cell::EMPTY {
+                        passes.push(true);
+                    } else {
+                        passes.push(false);
                     }
                 }
+            }
+
+            if passes.iter().all(|x| *x == true) {
+                world_y = row;
+            } else {
+                break;
             }
         }
         self.shadow_piece_position = Point {
-            x: world_x,
+            x: self.piece.get_position().x,
             y: world_y,
         };
     }
@@ -508,112 +517,83 @@ impl Game {
         return true;
     }
 
-
-
     fn rotate(&mut self, direction: Direction) -> bool {
-        // Can piece rotate is only true after a certain amount of time
-        // passes
         if self.piece.get_record_timer() > self.config.piece_rotation_wait_time {
             self.piece.reset_timer();
         } else {
             return false;
         }
-
         if self.piece.get_type() == Cell::O {
             return false;
         }
 
-        let box_size = self.piece.get_bounding_box_size();
-        let pivot = self.piece.get_origin();
-        let mut wall_kick_translation = Point::new(0, 0);
-        let mut moves: Vec<(i32, i32)> = Vec::with_capacity(4);
-        for row in 0..box_size {
-            for col in 0..box_size {
-                let local_index = self.piece.get_index(row, col);
-                if self.piece.get_cells()[local_index] == Cell::EMPTY {
-                    continue;
-                }
-                let world_point = Point {
-                    x: self.piece.get_position().x + col,
-                    y: self.piece.get_position().y + row,
-                };
-                let rotated_vector_x = world_point.x - pivot.x;
-                let rotated_vector_y = world_point.y - pivot.y;
+        let mut origin_move = None;
+        let srs_rotations = self.piece.get_rotation_wall_kick_offsets(direction);
+        let timer = self.piece.get_timer();
+        match direction {
+            Direction::Right => self.piece.rotate_clockwise(),
+            Direction::Left => self.piece.rotate_counter_clockwise(),
+        }
 
-                let rotation_matrix = match direction {
-                    Direction::Right => (1, -1), // this one
-                    Direction::Left => (-1, 1),
-                };
+        // 1. Check if the piece fits into it's new rotation
+        for (x, y) in srs_rotations {
+            let mut passes = Vec::new();
+            for local_row in 0..self.piece.get_bounding_box_size() {
+                for local_col in 0..self.piece.get_bounding_box_size() {
+                    if self.piece.get_cell(local_row, local_col) == Cell::EMPTY {
+                        passes.push(true);
+                        continue;
+                    }
 
-                let transformed_vector_x = rotation_matrix.1 * rotated_vector_y;
-                let transformed_vector_y = rotation_matrix.0 * rotated_vector_x;
+                    let world_row = self.piece.get_position().x + local_col + (-1 * x);
+                    if world_row >= self.width || world_row < 0 {
+                        passes.push(false);
+                        continue;
+                    }
 
-                let mut new_world_x = pivot.x + transformed_vector_x;
-                let mut new_world_y = pivot.y + transformed_vector_y;
+                    let world_col = self.piece.get_position().y + local_row + (-1 * y);
+                    println!(
+                        "({:?}) {} {} {} {}",
+                        self.piece.get_position(),
+                        world_col,
+                        world_row,
+                        local_col,
+                        local_row,
+                    );
+                    if world_col >= self.height || world_col < 0 {
+                        passes.push(false);
+                        continue;
+                    }
 
-                if self.piece.get_type() == Cell::I {
-                    if direction == Direction::Right {
-                        if self.piece.get_rotation() == Rotation::NORTH
-                            || self.piece.get_rotation() == Rotation::SOUTH
-                        {
-                            new_world_x = new_world_x - 1; // 12 - 1 = 11
-                        } else if self.piece.get_rotation() == Rotation::EAST
-                            || self.piece.get_rotation() == Rotation::WEST
-                        {
-                            new_world_x = new_world_x + 1;
-                        }
-                    } else if direction == Direction::Left {
-                        if self.piece.get_rotation() == Rotation::NORTH
-                            || self.piece.get_rotation() == Rotation::SOUTH
-                        {
-                            new_world_y = new_world_y - 1;
-                        } else if self.piece.get_rotation() == Rotation::EAST
-                            || self.piece.get_rotation() == Rotation::WEST
-                        {
-                            new_world_y = new_world_y + 1;
-                        }
+                    let world_index = self.get_index(world_col, world_row);
+                    if self.cells[world_index] == Cell::EMPTY {
+                        passes.push(true);
+                    } else {
+                        passes.push(false);
                     }
                 }
-
-                let new_local_x = new_world_x - self.piece.get_position().x;
-                let new_local_y = new_world_y - self.piece.get_position().y;
-
-                // 1. check if move is valid. If move is not valid, don't rotate
-                // 1.1 check if piece is inside right wall
-                let right_wall_kick_distance = -1 * (new_world_x - (self.width - 1)); // 11 - (10 - 1) = 2
-                if new_world_x > self.width - 1
-                    && right_wall_kick_distance < wall_kick_translation.x
-                {
-                    wall_kick_translation.x = right_wall_kick_distance;
-                }
-                // 1.2 check if piece is inside left wall
-                if new_world_x < 0 && new_world_x < wall_kick_translation.x {
-                    wall_kick_translation.x = new_world_x * -1;
-                }
-
-                // 1.3 check if piece is inside piece
-                let new_world_index = self.get_index(new_world_y, new_world_x);
-                if self.cells[new_world_index] != Cell::EMPTY {
-                    return false;
-                }
-
-                moves.push((new_local_x, new_local_y));
+            }
+            log!("{:?}", passes);
+            if passes.iter().all(|v| *v == true) {
+                origin_move = Some((x, y));
+                break;
             }
         }
-        // move pieces
-        for i in 0..self.piece.get_cells().len() {
-            self.piece.set_cell(i, Cell::EMPTY);
+
+        if let Some((x, y)) = origin_move {
+            println!("{:?}", self.piece.get_position_ref());
+            self.piece.get_position_ref().x += -1 * x ;
+            self.piece.get_position_ref().y += -1 * y ;
+            println!("{:?}", self.piece.get_position_ref());
+        } else {
+            self.piece.set_timer(timer);
+            match direction {
+                Direction::Right => self.piece.rotate_counter_clockwise(),
+                Direction::Left => self.piece.rotate_clockwise(),
+            }
+            self.piece.set_timer(timer);
         }
-        for i in &moves {
-            let new_index = self.piece.get_index(i.1, i.0);
-            self.piece.set_cell(new_index, self.piece.get_type());
-        }
-        self.piece.get_position_ref().x = self.piece.get_position().x + wall_kick_translation.x;
-        match direction {
-            Direction::Right => self.piece.get_rotation().clockwise(),
-            Direction::Left => self.piece.get_rotation().counter_clockwise(),
-        }
-        false
+        return false;
     }
 
     fn move_piece(&mut self, direction: Direction) -> bool {
@@ -781,5 +761,291 @@ impl From<&str> for Game {
         }
 
         game
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use crate::tetris::action::Action;
+    use crate::tetris::cell::Cell;
+    use crate::tetris::game::Game;
+    use crate::tetris::piece::Piece;
+    use crate::tetris::point::Point;
+    use crate::tetris::rotation::Rotation;
+
+    fn action(game: &mut Game, action: Action) {
+        game.get_piece().set_timer(1000.0);
+        game.event_handler(&mut [action]);
+    }
+
+    fn actions(game: &mut Game, actions: &[Action]) {
+        let mut vec_actions = actions.to_vec();
+        game.get_piece().set_timer(1000.0);
+        game.event_handler(&mut vec_actions);
+    }
+
+    fn new_piece(cell: Cell, x: i32, y: i32, rotation: Rotation) -> Piece {
+        let mut piece = Piece::new(cell);
+        piece.set_timer(1000.0);
+        piece.set_position(Point::new(x, y));
+        match rotation {
+            Rotation::NORTH => {}
+            Rotation::EAST => piece.rotate_clockwise(),
+            Rotation::SOUTH => {
+                piece.rotate_clockwise();
+                piece.rotate_clockwise()
+            }
+            Rotation::WEST => piece.rotate_counter_clockwise(),
+        }
+        piece
+    }
+
+    fn render_board(game: &mut Game) {
+        game.update_shadow_piece_position();
+        game.merge_piece_into_board();
+    }
+
+    #[test]
+    pub fn test_rotation_left() {
+        let mut game = Game::new();
+        game.set_piece(new_piece(Cell::I, -2, 5, Rotation::WEST));
+        actions(&mut game, &[Action::RotateClockWise, Action::MoveLeft]);
+        actions(&mut game, &[Action::RotateClockWise, Action::MoveLeft]);
+        actions(&mut game, &[Action::RotateClockWise]);
+        render_board(&mut game);
+
+        let cells = game.get_cell_vec();
+        let position = game.get_piece_position();
+        game.print();
+
+        assert_eq!(position.x, 0);
+        assert_eq!(position.y, 5);
+
+        assert_eq!(cells[game.get_index(7, 0)], Cell::I);
+        assert_eq!(cells[game.get_index(7, 1)], Cell::I);
+        assert_eq!(cells[game.get_index(7, 2)], Cell::I);
+        assert_eq!(cells[game.get_index(7, 3)], Cell::I);
+    }
+
+    #[test]
+    pub fn test_rotation_left_2() {
+        let mut game = Game::new();
+        let mut piece = Piece::new(Cell::I);
+        let moves = [Action::RotateClockWise, Action::MoveLeft];
+        piece.set_position(Point::new(0, 5));
+        game.set_piece(piece);
+
+        actions(&mut game, &moves);
+        actions(&mut game, &moves);
+        actions(&mut game, &moves);
+        actions(&mut game, &moves);
+        actions(&mut game, &moves);
+        actions(&mut game, &moves);
+
+        let position = game.get_piece_position();
+        assert_eq!(position.x, 0);
+        assert_eq!(position.y, 5);
+        game.merge_piece_into_board();
+        let cells = game.get_cell_vec();
+        assert_eq!(cells[game.get_index(7, 0)], Cell::I);
+        assert_eq!(cells[game.get_index(7, 1)], Cell::I);
+        assert_eq!(cells[game.get_index(7, 2)], Cell::I);
+        assert_eq!(cells[game.get_index(7, 3)], Cell::I);
+    }
+
+    #[test]
+    pub fn test_rotation_right() {
+        let mut game = Game::new();
+        game.set_piece(new_piece(Cell::I, game.get_width() - 4, 5, Rotation::NORTH));
+
+        // start flat
+        action(&mut game, Action::RotateClockWise);
+        action(&mut game, Action::RotateClockWise);
+        action(&mut game, Action::RotateClockWise);
+        action(&mut game, Action::MoveRight);
+        action(&mut game, Action::MoveRight);
+        let position = game.get_piece_position();
+        assert_eq!(position.x, game.get_width() - 3);
+        assert_eq!(position.y, 5);
+        action(&mut game, Action::RotateClockWise);
+
+        render_board(&mut game);
+        game.print();
+
+        let cells = game.get_cell_vec();
+        let max = game.get_width();
+        let position = game.get_piece_position();
+        assert_eq!(position.x, game.get_width() - 4);
+        assert_eq!(position.y, 5);
+
+        assert_eq!(cells[game.get_index(6, max - 1)], Cell::I);
+        assert_eq!(cells[game.get_index(6, max - 2)], Cell::I);
+        assert_eq!(cells[game.get_index(6, max - 3)], Cell::I);
+        assert_eq!(cells[game.get_index(6, max - 4)], Cell::I);
+    }
+
+    #[test]
+    pub fn test_shadow_always_on_floor() {
+        let mut game = Game::new();
+
+        let mut piece = Piece::new(Cell::I);
+        piece.set_position(Point::new(3, 5));
+        game.set_piece(piece);
+        game.update_shadow_piece_position();
+        game.merge_piece_into_board();
+
+        let mut piece = Piece::new(Cell::J);
+        piece.set_position(Point::new(2, 6));
+        game.set_piece(piece);
+        game.update_shadow_piece_position();
+        game.merge_piece_into_board();
+
+        game.print();
+
+        let cells = game.get_cell_vec();
+        let shadow_position = game.get_shadow_piece_position();
+
+        assert_eq!(cells[game.get_index(6, 3)], Cell::I);
+        assert_eq!(cells[game.get_index(6, 4)], Cell::I);
+        assert_eq!(cells[game.get_index(6, 5)], Cell::I);
+        assert_eq!(cells[game.get_index(6, 6)], Cell::I);
+
+        assert_eq!(cells[game.get_index(6, 2)], Cell::J);
+        assert_eq!(cells[game.get_index(7, 2)], Cell::J);
+        assert_eq!(cells[game.get_index(7, 3)], Cell::J);
+        assert_eq!(cells[game.get_index(7, 4)], Cell::J);
+
+        assert_eq!(shadow_position.x, 2);
+        assert_eq!(shadow_position.y, 23);
+    }
+
+    #[test]
+    pub fn test_shadow_always_on_floor_2() {
+        let mut game = Game::from(
+            r#" 
+        __________
+        ____IIIIII
+        "#,
+        );
+
+        let mut piece = Piece::new(Cell::L);
+        piece.set_timer(1000.0);
+        piece.rotate_counter_clockwise();
+        piece.set_position(Point::new(2, 0));
+        game.set_piece(piece);
+        game.update_shadow_piece_position();
+        game.merge_piece_into_board();
+
+        game.print();
+
+        let cells = game.get_cell_vec();
+        let shadow_position = game.get_shadow_piece_position();
+
+        assert_eq!(cells[game.get_index(0, 3)], Cell::L);
+        assert_eq!(cells[game.get_index(1, 3)], Cell::L);
+        assert_eq!(cells[game.get_index(2, 3)], Cell::L);
+        assert_eq!(cells[game.get_index(2, 4)], Cell::L);
+
+        assert_eq!(shadow_position.x, 2);
+        assert_eq!(shadow_position.y, 22);
+    }
+
+    #[test]
+    pub fn test_l_rotation_1() {
+        let mut game = Game::from(
+            r#" 
+        LLLLL LLLL
+        LLL    LLL
+        LLLLL LLLL
+        LLLLL LLLL
+        "#,
+        );
+
+        game.set_piece(new_piece(Cell::I, 3, 0, Rotation::NORTH));
+        action(&mut game, Action::RotateCounterClockWise);
+        render_board(&mut game);
+        game.print();
+
+        let cells = game.get_cell_vec();
+        assert_eq!(cells[game.get_index(0, 5)], Cell::I);
+        assert_eq!(cells[game.get_index(1, 5)], Cell::I);
+        assert_eq!(cells[game.get_index(2, 5)], Cell::I);
+        assert_eq!(cells[game.get_index(3, 5)], Cell::I);
+    }
+
+    #[test]
+    pub fn test_l_rotation_2() {
+        let mut game = Game::from(
+            r#" 
+        LLLLL LLLL
+        LLLLL LLLL
+        LLL    LLL
+        LLLLL LLLL
+        "#,
+        );
+        game.set_piece(new_piece(Cell::I, 3, 0, Rotation::WEST));
+        action(&mut game, Action::RotateCounterClockWise);
+        render_board(&mut game);
+        game.print();
+
+        let cells = game.get_cell_vec();
+        assert_eq!(cells[game.get_index(2, 3)], Cell::I);
+        assert_eq!(cells[game.get_index(2, 4)], Cell::I);
+        assert_eq!(cells[game.get_index(2, 5)], Cell::I);
+        assert_eq!(cells[game.get_index(2, 6)], Cell::I);
+    }
+
+    #[test]
+    pub fn test_cant_move_left_right() {
+        let mut game = Game::from(
+            r#"
+        LLLLL LLLL
+        LLL    LLL
+        LLLLL LLLL
+        LLLLL LLLL
+        "#,
+        );
+
+        game.set_piece(new_piece(Cell::I, 3, 0, Rotation::EAST));
+        actions(&mut game, &[Action::MoveRight, Action::MoveLeft]);
+        render_board(&mut game);
+        game.print();
+
+        let cells = game.get_cell_vec();
+        assert_eq!(cells[game.get_index(0, 5)], Cell::I);
+        assert_eq!(cells[game.get_index(1, 5)], Cell::I);
+        assert_eq!(cells[game.get_index(2, 5)], Cell::I);
+        assert_eq!(cells[game.get_index(3, 5)], Cell::I);
+    }
+
+    #[test]
+    pub fn test_wall_kick_rotation() {
+        let mut game = Game::from(
+            r#" 
+        __________
+        ____II____
+        _____III__
+        ______IIII
+        _III___III
+        II____IIII
+        IIII__IIII
+        IIIII_IIII
+        "#,
+        );
+
+        let mut piece = Piece::new(Cell::J);
+        piece.set_position(Point::new(3, 2));
+        game.set_piece(piece);
+        action(&mut game, Action::RotateClockWise);
+        game.update_shadow_piece_position();
+        game.merge_piece_into_board();
+        game.print();
+
+        let cells = game.get_cell_vec();
+        assert_eq!(cells[game.get_index(4, 5)], Cell::J);
+        assert_eq!(cells[game.get_index(5, 5)], Cell::J);
+        assert_eq!(cells[game.get_index(6, 5)], Cell::J);
+        assert_eq!(cells[game.get_index(6, 4)], Cell::J);
     }
 }

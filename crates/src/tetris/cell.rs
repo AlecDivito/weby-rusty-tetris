@@ -27,7 +27,7 @@ impl From<char> for Cell {
             'Z' => Cell::Z,
             'J' => Cell::J,
             'L' => Cell::L,
-            _ => Cell::EMPTY
+            _ => Cell::EMPTY,
         }
     }
 }
@@ -64,7 +64,6 @@ impl Debug for Cell {
 }
 
 impl Cell {
-
     /// pick a random cell
     pub fn random() -> Cell {
         let piece = (js_sys::Math::random() * 6.0).round() as i32;
@@ -83,12 +82,21 @@ impl Cell {
 
     /// Get a random queue of next pieces to pick to start falling
     pub fn random_piece_queue() -> Vec<Cell> {
-        let mut cell_array = vec![Cell::I, Cell::O, Cell::T, Cell::S, Cell::Z, Cell::J, Cell::L];
+        let mut cell_array = vec![
+            Cell::I,
+            Cell::O,
+            Cell::T,
+            Cell::S,
+            Cell::Z,
+            Cell::J,
+            Cell::L,
+        ];
         Cell::shuffle(&mut cell_array);
         cell_array
     }
 
     /// Get the cell represented in a 4x4 grid in a 1D array
+    #[rustfmt::skip]
     pub fn get_cells(&self) -> Vec<Cell> {
         match self {
             Cell::O => vec![Cell::O, Cell::O,
@@ -106,11 +114,11 @@ impl Cell {
             Cell::Z => vec![Cell::Z,     Cell::Z,     Cell::EMPTY,
                             Cell::EMPTY, Cell::Z,     Cell::Z,
                             Cell::EMPTY, Cell::EMPTY, Cell::EMPTY],
-            Cell::J => vec![Cell::EMPTY, Cell::EMPTY, Cell::J,
-                            Cell::J,     Cell::J,     Cell::J,
-                            Cell::EMPTY, Cell::EMPTY, Cell::EMPTY],
-            Cell::L => vec![Cell::L,     Cell::EMPTY, Cell::EMPTY,
+            Cell::L => vec![Cell::EMPTY, Cell::EMPTY, Cell::L,
                             Cell::L,     Cell::L,     Cell::L,
+                            Cell::EMPTY, Cell::EMPTY, Cell::EMPTY],
+            Cell::J => vec![Cell::J,     Cell::EMPTY, Cell::EMPTY,
+                            Cell::J,     Cell::J,     Cell::J,
                             Cell::EMPTY, Cell::EMPTY, Cell::EMPTY],
             _ => vec![Cell::EMPTY]
         }
@@ -131,12 +139,12 @@ impl Cell {
 
     #[cfg(not(target_arch = "wasm32"))]
     fn shuffle<T>(array: &mut Vec<T>) {
-        for i in (0..array.len()).rev() {
-            let mut j = (rand::random_range(0.0..1.0) as f64 * ((i as f64) + 1.0)).round() as usize;
-            if j >= array.len() {
-                j = array.len() - 1;
-            }
-            array.swap(i, j);
-        }
+        // for i in (0..array.len()).rev() {
+        //     let mut j = (rand::random_range(0.0..1.0) as f64 * ((i as f64) + 1.0)).round() as usize;
+        //     if j >= array.len() {
+        //         j = array.len() - 1;
+        //     }
+        //     array.swap(i, j);
+        // }
     }
 }
